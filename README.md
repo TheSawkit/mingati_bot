@@ -2,7 +2,7 @@
 
 Bot Discord privé du serveur **Mingati !** (~20 potes). Petit, fiable, pensé pour tourner 24/7 sur un Raspberry Pi.
 
-> **V2 en cours de reconstruction.** Phase 1 (fondations) terminée. Les fonctionnalités arrivent phase par phase — voir [Roadmap](#roadmap).
+> **V2 en cours de reconstruction.** Phases 1 (fondations) et 2 (vocaux temporaires) terminées. Les fonctionnalités arrivent phase par phase — voir [Roadmap](#roadmap).
 
 ## Sommaire
 
@@ -22,6 +22,17 @@ Bot Discord privé du serveur **Mingati !** (~20 potes). Petit, fiable, pensé p
 | Commande | Qui | Description |
 |---|---|---|
 | `/bot status` | Staff | Uptime, latence, version, état SQLite, dernière erreur |
+| `/vocal rename` `lock` `unlock` `invite` `limit` `transfer` `close` | Propriétaire du vocal | Contrôle de son vocal temporaire |
+
+### Vocaux temporaires
+
+- Rejoindre **➕・CRÉER UN VOCAL** (communauté) ou **🎮・CRÉER UN VOCAL** (gaming) crée un vocal « *Pseudo's Palace* » dans la même catégorie et t'y déplace.
+- Un panneau de contrôle (Renommer, Limite, Inviter, Verrouiller, Déverrouiller, Transférer, Fermer) est posté dans le chat du vocal. Les mêmes actions existent en `/vocal`.
+- Le vocal est supprimé dès qu'il ne reste plus d'humain dedans.
+- Si le propriétaire part, un membre encore présent devient propriétaire au hasard.
+- Un membre ne possède qu'un vocal à la fois : revenir dans le salon déclencheur le renvoie dans le sien.
+- Au démarrage, le bot répare l'état : salons disparus oubliés, salons vides supprimés, propriétaires absents remplacés, membres en attente dans un déclencheur servis.
+- Le bot ne supprime **jamais** un salon qu'il n'a pas créé (suivi par ID en base, pas par nom).
 
 Toutes les commandes sont des **slash commands** synchronisées sur le serveur Mingati au démarrage. Il n'y a plus de commandes `!prefix`.
 
@@ -57,17 +68,23 @@ Principe du moindre privilège : **jamais `Administrator`**.
 | Send Messages | Publier cartes, free games, réponses |
 | Embed Links | Messages en embeds |
 | Read Message History | Mettre à jour ses propres messages (hub, cartes) |
-| Manage Channels | Créer / supprimer les vocaux temporaires (phase 2) |
-| Move Members | Déplacer le membre dans son vocal (phase 2) |
+| Manage Channels | Créer, renommer, supprimer les vocaux temporaires |
+| Manage Roles | Modifier les permissions d'un vocal : verrouiller, déverrouiller, inviter |
+| Connect | Obligatoire pour déplacer un membre dans un vocal |
+| Move Members | Déplacer le membre dans son vocal |
 
-La liste exacte sera confirmée à la fin de la phase 2 (verrouillage des vocaux).
+Sources : [Modify Channel / Edit Channel Permissions](https://discord.com/developers/docs/resources/channel) exigent `MANAGE_ROLES` pour toucher aux permissions d'un salon ; [Modify Guild Member](https://discord.com/developers/docs/resources/guild#modify-guild-member) exige `MOVE_MEMBERS` + `CONNECT` sur le salon cible.
+
+**Important — rôle du bot en bas de la hiérarchie.** `Manage Roles` permet d'attribuer les rôles situés *sous* celui du bot. Dans *Paramètres du serveur → Rôles*, place le rôle du bot tout en bas : il ne pourra attribuer aucun rôle, mais pourra toujours gérer les permissions de ses vocaux. Les membres ne reçoivent eux **aucune** permission de gestion : tout passe par le bot.
+
+Sans `Manage Roles`, les vocaux sont quand même créés et supprimés ; seuls verrouiller, déverrouiller et inviter répondent « il me manque des permissions ».
 
 ### Intents
 
 | Intent | Activé | Condition |
 |---|---|---|
 | Guilds | Oui | Toujours |
-| Voice States | Phase 2 | Vocaux temporaires (non privilégié) |
+| Voice States | Oui | Vocaux temporaires (non privilégié) |
 | Message Content | Non | Uniquement si le mode `@Billy` est activé (phase 5) |
 | Server Members | Non | Uniquement si réellement nécessaire |
 | Presence | Non | Uniquement si la feature présence est activée (phase 9) |
@@ -159,6 +176,10 @@ La CI GitHub Actions lance ces trois étapes puis construit l'image Docker pour 
 | Slash commands absentes | Scope `applications.commands` manquant | Réinviter le bot avec les deux scopes |
 | `PermissionError` sur `data/` dans Docker | `./data` créé par root | `sudo chown -R 1000:1000 data` |
 | `unable to open database file` | Dossier `data/` absent ou non monté | `mkdir -p data`, vérifier `compose.yaml` |
+| Rien ne se passe en rejoignant « Créer un vocal » | ID du salon déclencheur absent ou faux | Vérifier `CHANNEL_CREATE_VOICE_*_ID` ; le log de démarrage signale un déclencheur introuvable |
+| « Il me manque des permissions Discord » sur verrouiller / inviter | `Manage Roles` absent | Donner `Manage Roles` au rôle du bot (placé en bas de la hiérarchie) |
+| Vocal créé mais membre pas déplacé | `Move Members` ou `Connect` absent sur la catégorie | Vérifier les permissions du rôle du bot sur la catégorie |
+| Renommage qui échoue | Discord limite fortement les renommages de salon | Attendre quelques minutes |
 | Warning `PyNaCl is not installed` | Normal : le bot ne joue pas d'audio | Rien à faire |
 | Bot ne redémarre pas après reboot du Pi | Service Docker non activé | `sudo systemctl enable docker` |
 
@@ -167,7 +188,7 @@ La CI GitHub Actions lance ces trois étapes puis construit l'image Docker pour 
 | Phase | Contenu | État |
 |---|---|---|
 | 1 | Fondations : config, logging, SQLite + migrations, Docker, CI, `/bot status` | Terminé |
-| 2 | Vocaux temporaires | À faire |
+| 2 | Vocaux temporaires | Terminé |
 | 3 | Qui joue ? (`/jouer`) | À faire |
 | 4 | Jeux gratuits Steam / Epic / GOG | À faire |
 | 5 | Billy (IA) + `/blague` | À faire |

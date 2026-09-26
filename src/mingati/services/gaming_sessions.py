@@ -57,17 +57,26 @@ class NewSession:
     expires_at: datetime
 
 
+def parse_clock(raw: str) -> tuple[int, int]:
+    """Hour and minute from '21h', '21h30' or '21:30'."""
+    match = TIME_PATTERN.match(raw.strip().lower())
+    if match is None:
+        raise UserFacingError("Heure invalide. Exemples : `21h`, `21h30`, `21:30`.")
+    return int(match["hour"]), int(match["minute"] or 0)
+
+
 def parse_start(raw: str | None, now: datetime) -> datetime:
     """Parse '21h', '21h30' or '21:30' in now's timezone; a time already passed means tomorrow."""
     text = (raw or "").strip().lower()
     if text in ("", "maintenant"):
         return now
-    match = TIME_PATTERN.match(text)
-    if match is None:
-        raise UserFacingError("Heure invalide. Exemples : `21h`, `21h30`, `21:30`, `maintenant`.")
-    start = now.replace(
-        hour=int(match["hour"]), minute=int(match["minute"] or 0), second=0, microsecond=0
-    )
+    try:
+        hour, minute = parse_clock(text)
+    except UserFacingError as error:
+        raise UserFacingError(
+            "Heure invalide. Exemples : `21h`, `21h30`, `21:30`, `maintenant`."
+        ) from error
+    start = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
     return start if start >= now - timedelta(minutes=5) else start + timedelta(days=1)
 
 

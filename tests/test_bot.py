@@ -82,6 +82,12 @@ async def test_cogs_register_expected_commands_and_persistent_views(tmp_path: Pa
             "billy": [],
             "blague": [],
             "mingati": [],
+            "dé": [],
+            "coinflip": [],
+            "8ball": [],
+            "roulette": [],
+            "random-game": [],
+            "game-night": [],
         }
         assert len(bot.persistent_views) == 3
         assert all(view.is_persistent() for view in bot.persistent_views)

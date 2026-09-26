@@ -12,6 +12,7 @@ from mingati.errors import UserFacingError
 from mingati.services.guild_config import GuildConfigStore
 from mingati.utils.permissions import staff_only
 from mingati.views.hub import (
+    ACTIVITIES,
     HubView,
     build_hub_embed,
     describe_free_games,
@@ -69,6 +70,9 @@ class Hub(commands.Cog):
     async def show_free_games(self, interaction: discord.Interaction) -> None:
         games = await self.bot.free_games.active(datetime.now(UTC))
         await interaction.response.send_message(describe_free_games(games), ephemeral=True)
+
+    async def show_activities(self, interaction: discord.Interaction) -> None:
+        await interaction.response.send_message(ACTIVITIES, ephemeral=True)
 
     async def ask_billy(self, interaction: discord.Interaction, question: str) -> None:
         cleaned = self.bot.billy.prepare_question(interaction.user.id, question, datetime.now(UTC))

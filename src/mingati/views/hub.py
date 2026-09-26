@@ -16,6 +16,7 @@ class HubControls(Protocol):
     async def show_voice(self, interaction: discord.Interaction) -> None: ...
     async def show_free_games(self, interaction: discord.Interaction) -> None: ...
     async def ask_billy(self, interaction: discord.Interaction, question: str) -> None: ...
+    async def show_activities(self, interaction: discord.Interaction) -> None: ...
 
 
 def build_hub_embed() -> discord.Embed:
@@ -27,6 +28,7 @@ def build_hub_embed() -> discord.Embed:
             "🎮 **Qui joue ?** — les parties qui cherchent du monde\n"
             "🔊 **Créer un vocal** — ton salon perso en un clic\n"
             "🎁 **Jeux gratuits** — ce qui est offert en ce moment\n"
+            "🎲 **Activité** — dés, roulette, soirée jeu…\n"
             "🤖 **Billy** — pose-lui une question (il stresse un peu)"
         ),
         color=discord.Color.blurple(),
@@ -54,6 +56,14 @@ def describe_free_games(games: list[FreeGame]) -> str:
         for game in games[:MAX_LISTED]
     ]
     return "\n".join(["🎁 **Gratuit en ce moment**", *lines])
+
+
+ACTIVITIES = (
+    "🎲 **Activités**\n"
+    "• `/game-night` — programme une soirée jeu (événement Discord)\n"
+    "• `/random-game` — tire au sort le jeu de ce soir\n"
+    "• `/roulette` · `/dé` · `/coinflip` · `/8ball` · `/blague`"
+)
 
 
 def describe_voice_triggers(trigger_ids: frozenset[int]) -> str:
@@ -94,6 +104,10 @@ class HubView(MingatiView):
     @discord.ui.button(label="Jeux gratuits", emoji="🎁", custom_id="mingati:hub:free_games")
     async def free_games(self, interaction: discord.Interaction, _: discord.ui.Button) -> None:
         await self.controls.show_free_games(interaction)
+
+    @discord.ui.button(label="Activité", emoji="🎲", custom_id="mingati:hub:activities")
+    async def activities(self, interaction: discord.Interaction, _: discord.ui.Button) -> None:
+        await self.controls.show_activities(interaction)
 
     @discord.ui.button(label="Billy", emoji="🤖", custom_id="mingati:hub:billy")
     async def billy(self, interaction: discord.Interaction, _: discord.ui.Button) -> None:

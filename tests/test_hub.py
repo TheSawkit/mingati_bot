@@ -5,7 +5,12 @@ from mingati.database import Database
 from mingati.providers.games import FreeGame
 from mingati.services.gaming_sessions import GamingSessionService, plan_session
 from mingati.services.guild_config import GuildConfigStore
-from mingati.views.hub import describe_free_games, describe_sessions, describe_voice_triggers
+from mingati.views.hub import (
+    ACTIVITIES,
+    describe_free_games,
+    describe_sessions,
+    describe_voice_triggers,
+)
 
 NOW = datetime(2026, 9, 26, 20, 0, tzinfo=ZoneInfo("Europe/Brussels"))
 
@@ -72,3 +77,8 @@ def test_free_games_and_voice_triggers_are_listed() -> None:
         [game]
     )
     assert describe_voice_triggers(frozenset({2, 1})).startswith("🔊 Rejoins <#1> ou <#2>")
+
+
+def test_activities_list_every_fun_command() -> None:
+    for command in ("/game-night", "/random-game", "/roulette", "/dé", "/coinflip", "/8ball"):
+        assert command in ACTIVITIES

@@ -28,6 +28,8 @@ EXTENSIONS = (
     "mingati.cogs.free_games",
     "mingati.cogs.billy",
     "mingati.cogs.hub",
+    "mingati.cogs.fun",
+    "mingati.cogs.game_night",
 )
 
 

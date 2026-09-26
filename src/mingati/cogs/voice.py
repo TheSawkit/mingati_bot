@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime, timedelta
 
 import discord
@@ -15,6 +16,8 @@ from mingati.views.voice import VoiceControlView, build_panel_embed
 log = logging.getLogger(__name__)
 
 UNUSED_ROOM_GRACE = timedelta(minutes=10)
+
+RoomAction = Callable[[discord.Member, discord.VoiceChannel], Awaitable[str]]
 
 
 class Voice(commands.Cog):
@@ -140,56 +143,57 @@ class Voice(commands.Cog):
         actor, channel = self._context(interaction)
         return [member for member in humans(channel.members) if member.id != actor.id]
 
-    async def rename(self, interaction: discord.Interaction, name: str) -> None:
+    async def _run(self, interaction: discord.Interaction, action: RoomAction) -> None:
         actor, channel = self._context(interaction)
         await interaction.response.defer(ephemeral=True, thinking=True)
-        new_name = await self.service.rename(actor, channel, name)
-        await interaction.followup.send(f"✏️ Salon renommé en **{new_name}**.", ephemeral=True)
+        await interaction.followup.send(await action(actor, channel), ephemeral=True)
+
+    async def rename(self, interaction: discord.Interaction, name: str) -> None:
+        async def action(actor: discord.Member, channel: discord.VoiceChannel) -> str:
+            new_name = await self.service.rename(actor, channel, name)
+            return f"✏️ Salon renommé en **{new_name}**."
+
+        await self._run(interaction, action)
 
     async def set_limit(self, interaction: discord.Interaction, limit: int) -> None:
-        actor, channel = self._context(interaction)
-        await interaction.response.defer(ephemeral=True, thinking=True)
-        await self.service.set_limit(actor, channel, limit)
-        text = "Plus de limite de places." if limit == 0 else f"Limite fixée à {limit} places."
-        await interaction.followup.send(f"🔢 {text}", ephemeral=True)
+        async def action(actor: discord.Member, channel: discord.VoiceChannel) -> str:
+            await self.service.set_limit(actor, channel, limit)
+            text = "Plus de limite de places." if limit == 0 else f"Limite fixée à {limit} places."
+            return f"🔢 {text}"
+
+        await self._run(interaction, action)
 
     async def lock(self, interaction: discord.Interaction) -> None:
-        actor, channel = self._context(interaction)
-        await interaction.response.defer(ephemeral=True, thinking=True)
-        room = await self.service.lock(actor, channel)
-        await self.refresh_panel(room)
-        await interaction.followup.send(
-            "🔒 Salon verrouillé : seuls les présents et les invités peuvent entrer.",
-            ephemeral=True,
-        )
+        async def action(actor: discord.Member, channel: discord.VoiceChannel) -> str:
+            await self.refresh_panel(await self.service.lock(actor, channel))
+            return "🔒 Salon verrouillé : seuls les présents et les invités peuvent entrer."
+
+        await self._run(interaction, action)
 
     async def unlock(self, interaction: discord.Interaction) -> None:
-        actor, channel = self._context(interaction)
-        await interaction.response.defer(ephemeral=True, thinking=True)
-        room = await self.service.unlock(actor, channel)
-        await self.refresh_panel(room)
-        await interaction.followup.send("🔓 Salon ouvert à tout le monde.", ephemeral=True)
+        async def action(actor: discord.Member, channel: discord.VoiceChannel) -> str:
+            await self.refresh_panel(await self.service.unlock(actor, channel))
+            return "🔓 Salon ouvert à tout le monde."
+
+        await self._run(interaction, action)
 
     async def invite(self, interaction: discord.Interaction, guest: discord.Member) -> None:
-        actor, channel = self._context(interaction)
-        await interaction.response.defer(ephemeral=True, thinking=True)
-        await self.service.invite(actor, channel, guest)
-        await interaction.followup.send(
-            f"👥 {guest.mention} peut rejoindre ton salon.", ephemeral=True
-        )
-        await channel.send(
-            f"{guest.mention}, {actor.display_name} t'invite dans {channel.mention} !",
-            allowed_mentions=discord.AllowedMentions(users=[guest]),
-        )
+        async def action(actor: discord.Member, channel: discord.VoiceChannel) -> str:
+            await self.service.invite(actor, channel, guest)
+            await channel.send(
+                f"{guest.mention}, {actor.display_name} t'invite dans {channel.mention} !",
+                allowed_mentions=discord.AllowedMentions(users=[guest]),
+            )
+            return f"👥 {guest.mention} peut rejoindre ton salon."
+
+        await self._run(interaction, action)
 
     async def transfer(self, interaction: discord.Interaction, new_owner: discord.Member) -> None:
-        actor, channel = self._context(interaction)
-        await interaction.response.defer(ephemeral=True, thinking=True)
-        room = await self.service.transfer(actor, channel, new_owner)
-        await self.refresh_panel(room)
-        await interaction.followup.send(
-            f"👑 {new_owner.mention} est maintenant propriétaire du salon.", ephemeral=True
-        )
+        async def action(actor: discord.Member, channel: discord.VoiceChannel) -> str:
+            await self.refresh_panel(await self.service.transfer(actor, channel, new_owner))
+            return f"👑 {new_owner.mention} est maintenant propriétaire du salon."
+
+        await self._run(interaction, action)
 
     async def close(self, interaction: discord.Interaction) -> None:
         actor, channel = self._context(interaction)

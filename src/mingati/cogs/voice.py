@@ -10,7 +10,7 @@ from discord.ext import commands, tasks
 
 from mingati.bot import MingatiBot
 from mingati.errors import UserFacingError
-from mingati.services.voice_rooms import VoiceRoom, humans
+from mingati.services.voice_rooms import MAX_USER_LIMIT, VoiceRoom, humans
 from mingati.views.voice import VoiceControlView, build_panel_embed
 
 log = logging.getLogger(__name__)
@@ -222,7 +222,7 @@ class Voice(commands.Cog):
     @vocal.command(name="limit", description="Fixe le nombre de places (0 = illimité)")
     @app_commands.describe(places="Nombre de places, 0 pour illimité")
     async def vocal_limit(
-        self, interaction: discord.Interaction, places: app_commands.Range[int, 0, 99]
+        self, interaction: discord.Interaction, places: app_commands.Range[int, 0, MAX_USER_LIMIT]
     ) -> None:
         await self.set_limit(interaction, places)
 

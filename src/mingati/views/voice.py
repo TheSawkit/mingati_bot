@@ -4,7 +4,7 @@ import discord
 
 from mingati.errors import UserFacingError
 from mingati.interactions import MingatiModal, MingatiView
-from mingati.services.voice_rooms import MAX_NAME_LENGTH, VoiceRoom
+from mingati.services.voice_rooms import MAX_NAME_LENGTH, MAX_USER_LIMIT, VoiceRoom
 
 PICKER_TIMEOUT_SECONDS = 120
 MAX_SELECT_OPTIONS = 25
@@ -44,7 +44,7 @@ def parse_limit(raw: str) -> int:
     try:
         return int(raw.strip())
     except ValueError as error:
-        raise UserFacingError("Indique un nombre entre 0 et 99.") from error
+        raise UserFacingError(f"Indique un nombre entre 0 et {MAX_USER_LIMIT}.") from error
 
 
 class RenameModal(MingatiModal, title="Renommer le salon"):
@@ -62,7 +62,7 @@ class RenameModal(MingatiModal, title="Renommer le salon"):
 
 class LimitModal(MingatiModal, title="Limite de places"):
     places: discord.ui.TextInput["LimitModal"] = discord.ui.TextInput(
-        label="Nombre de places (0 = illimité)", max_length=2
+        label="Nombre de places (0 = illimité)", max_length=len(str(MAX_USER_LIMIT))
     )
 
     def __init__(self, controls: VoiceControls) -> None:

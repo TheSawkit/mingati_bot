@@ -177,3 +177,17 @@ def test_plan_session_normalises_text() -> None:
 
     assert session.game == "Rocket League"
     assert session.mode is None
+
+
+async def test_deleted_voice_room_is_unlinked_from_its_session(
+    service: GamingSessionService,
+) -> None:
+    session = await service.create(planned(), NOW)
+    await service.attach_voice_channel(session.id, 555)
+
+    unlinked = await service.detach_voice_channel(555)
+
+    assert [s.id for s in unlinked] == [session.id]
+    assert unlinked[0].voice_channel_id is None
+    assert "<#555>" not in build_session_embed(unlinked[0]).description
+    assert await service.detach_voice_channel(555) == []

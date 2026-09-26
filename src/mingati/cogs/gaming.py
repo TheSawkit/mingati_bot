@@ -157,6 +157,11 @@ class Gaming(commands.Cog):
         await self.bot.wait_until_ready()
 
     @commands.Cog.listener()
+    async def on_guild_channel_delete(self, channel: discord.abc.GuildChannel) -> None:
+        for session in await self.sessions.detach_voice_channel(channel.id):
+            await self._edit_card(session)
+
+    @commands.Cog.listener()
     async def on_raw_member_remove(self, payload: discord.RawMemberRemoveEvent) -> None:
         changes = await self.sessions.remove_member_everywhere(payload.guild_id, payload.user.id)
         for before, after in changes:

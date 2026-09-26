@@ -151,6 +151,17 @@ class GamingSessionService:
             "UPDATE gaming_sessions SET voice_channel_id = ? WHERE id = ?", (channel_id, session_id)
         )
 
+    async def detach_voice_channel(self, channel_id: int) -> list[GamingSession]:
+        """Unlink a deleted voice room; returns the sessions whose card must be refreshed."""
+        rows = await self.database.fetch_all(
+            "SELECT id FROM gaming_sessions WHERE voice_channel_id = ?", (channel_id,)
+        )
+        await self.database.execute(
+            "UPDATE gaming_sessions SET voice_channel_id = NULL WHERE voice_channel_id = ?",
+            (channel_id,),
+        )
+        return [await self._require(row["id"]) for row in rows]
+
     async def get_by_message(self, message_id: int) -> GamingSession:
         row = await self.database.fetch_one(
             "SELECT id FROM gaming_sessions WHERE message_id = ?", (message_id,)

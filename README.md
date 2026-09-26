@@ -2,7 +2,7 @@
 
 Bot Discord privé du serveur **Mingati !** (~20 potes). Petit, fiable, pensé pour tourner 24/7 sur un Raspberry Pi.
 
-> **V2 en cours de reconstruction.** Phases 1 à 7 terminées : fondations, vocaux temporaires, qui joue ?, jeux gratuits, Billy, hub, game night et fun. Les fonctionnalités arrivent phase par phase — voir [Roadmap](#roadmap).
+> **V2 en cours de reconstruction.** Phases 1 à 8 terminées. La phase 9 (présence) est optionnelle et attend ta validation. Les fonctionnalités arrivent phase par phase — voir [Roadmap](#roadmap).
 
 ## Sommaire
 
@@ -30,6 +30,8 @@ Bot Discord privé du serveur **Mingati !** (~20 potes). Petit, fiable, pensé p
 | `/blague` | Tout le monde | Une blague, chute cachée en spoiler |
 | `/game-night` | Tout le monde | Programme une soirée jeu (événement Discord natif) |
 | `/dé` `/coinflip` `/8ball` `/roulette` `/random-game` | Tout le monde | Commandes fun |
+| `/server status` | Tout le monde | État des serveurs de jeux suivis |
+| `/server add` `remove` | Staff | Gère la liste des serveurs suivis |
 
 ### Vocaux temporaires
 
@@ -94,6 +96,10 @@ Toutes les commandes sont des **slash commands** synchronisées sur le serveur M
 ### Fun
 
 `/dé [faces] [nombre]`, `/coinflip`, `/8ball question`, `/roulette [membre]` (1 chance sur 6), `/random-game choix:"Valorant, LoL, Minecraft"`. Une utilisation toutes les 3 s par membre. Pas d'XP, pas de niveaux.
+
+### Serveurs de jeux
+
+Le staff ajoute un serveur depuis Discord : `/server add nom:Survie adresse:mc.exemple.fr` (port optionnel, `host:port`). `/server status` affiche pour chacun : en ligne / hors ligne, joueurs, maximum, version, latence et MOTD. Premier jeu pris en charge : **Minecraft Java** (via [mcstatus](https://pypi.org/project/mcstatus/)) ; d'autres jeux = un nouveau provider.
 
 ### Billy
 
@@ -296,5 +302,5 @@ La CI GitHub Actions lance ces trois étapes puis construit l'image Docker pour 
 | 5 | Billy (IA) + `/blague` + bienvenue | Terminé |
 | 6 | Hub `/mingati` | Terminé |
 | 7 | Game night + commandes fun | Terminé |
-| 8 | Serveurs de jeux (Minecraft) | À faire |
+| 8 | Serveurs de jeux (Minecraft) | Terminé |
 | 9 | Optionnel (présence…) | À valider |

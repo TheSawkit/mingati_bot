@@ -27,12 +27,14 @@ src/mingati/
 │   ├── session_voice.py   règles « Créer le vocal » d'une session (inscrits seulement, réutilisation)
 │   ├── free_games.py      pipeline jeux gratuits (validation, déduplication, publication)
 │   ├── billy.py           personnalité, limites d'usage, secours pour chaque réponse
-│   └── guild_config.py    état clé/valeur par serveur (position du hub)
+│   ├── guild_config.py    état clé/valeur par serveur (position du hub)
+│   └── game_servers.py    serveurs suivis + statut en parallèle
 ├── providers/
 │   ├── http.py            client aiohttp partagé : timeout, retries
 │   ├── games/             EpicProvider, SteamProvider, GogProvider → FreeGame
 │   ├── ai/                AIProvider + OpenAICompatibleProvider (Gemini, Groq…)
-│   └── jokes.py           blagues-api.fr
+│   ├── jokes.py           blagues-api.fr
+│   └── servers/           ServerProvider + MinecraftJavaProvider (mcstatus)
 ├── interactions.py    erreurs communes slash/boutons/modals, MingatiView, MingatiModal
 ├── views/
 │   ├── voice.py       panneau persistant, modals, sélecteurs
@@ -215,6 +217,13 @@ refresh (toutes les 2 h ou /freegames refresh)
 - `/game-night` : `plan_game_night` (pur, testé) valide et calcule la fenêtre dans `TIMEZONE`, puis `guild.create_scheduled_event` (externe, 3 h). Pas de table : l'événement natif est la source de vérité, Discord gère inscriptions et notifications.
 - `services/fun.py` : tirages purs prenant un `random.Random` (tests déterministes, `SystemRandom` en production).
 
-## Flux des features à venir
+## Serveurs de jeux
 
-Serveurs de jeux (phase 8).
+- Table `game_servers` : `(guild_id, name)` unique, `name` en `COLLATE NOCASE`, `kind` = clé du provider.
+- `ServerProvider` (`kind`, `label`, `status(address)`) renvoie un `ServerStatus` ; un serveur injoignable (réseau, DNS, timeout) donne `OFFLINE` au lieu d'une erreur.
+- `GameServerService.statuses` interroge tous les serveurs en parallèle (`asyncio.gather`).
+- Ajouter un jeu : écrire un provider et l'ajouter à `default_server_providers()`.
+
+## Suite
+
+Phase 9 (présence, jeux lancés par les membres) : optionnelle, demande l'intent privilégié *Presence*, à valider avant de la construire.

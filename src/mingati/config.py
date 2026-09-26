@@ -40,6 +40,7 @@ class Settings(BaseSettings):
 
     billy_mentions_enabled: bool = False
     welcome_enabled: bool = False
+    presence_enabled: bool = False
 
     database_path: Path = Path("data/mingati.db")
     log_level: LogLevel = "INFO"

@@ -10,6 +10,7 @@ from discord.ext import commands
 from mingati.bot import MingatiBot
 from mingati.errors import UserFacingError
 from mingati.services.guild_config import GuildConfigStore
+from mingati.services.presence import describe_playing
 from mingati.utils.permissions import staff_only
 from mingati.views.hub import (
     ACTIVITIES,
@@ -58,8 +59,11 @@ class Hub(commands.Cog):
     async def show_sessions(self, interaction: discord.Interaction) -> None:
         guild_id = interaction.guild_id or self.bot.settings.discord_guild_id
         sessions = await self.bot.gaming_sessions.list_open(guild_id, datetime.now(UTC))
+        text = describe_sessions(sessions, guild_id)
+        if self.bot.settings.presence_enabled and interaction.guild is not None:
+            text += "\n\n" + describe_playing(interaction.guild.members)
         await interaction.response.send_message(
-            describe_sessions(sessions, guild_id), ephemeral=True
+            text, ephemeral=True, allowed_mentions=discord.AllowedMentions.none()
         )
 
     async def show_voice(self, interaction: discord.Interaction) -> None:

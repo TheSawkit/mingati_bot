@@ -33,6 +33,7 @@ EXTENSIONS = (
     "mingati.cogs.fun",
     "mingati.cogs.game_night",
     "mingati.cogs.servers",
+    "mingati.cogs.presence",
 )
 
 
@@ -42,7 +43,8 @@ def build_intents(settings: Settings) -> discord.Intents:
         guilds=True,
         voice_states=True,
         guild_messages=settings.billy_mentions_enabled,
-        members=settings.welcome_enabled,
+        members=settings.welcome_enabled or settings.presence_enabled,
+        presences=settings.presence_enabled,
     )
 
 

@@ -216,6 +216,15 @@ class GamingSessionService:
     async def delete(self, session_id: int) -> None:
         await self.database.execute("DELETE FROM gaming_sessions WHERE id = ?", (session_id,))
 
+    async def list_open(self, guild_id: int, now: datetime) -> list[GamingSession]:
+        """Sessions with a published card that are not over yet, soonest first."""
+        rows = await self.database.fetch_all(
+            "SELECT id FROM gaming_sessions WHERE guild_id = ? AND message_id IS NOT NULL"
+            " AND expires_at > ? ORDER BY starts_at",
+            (guild_id, int(now.timestamp())),
+        )
+        return [await self._require(row["id"]) for row in rows]
+
     async def list_expired(self, now: datetime) -> list[GamingSession]:
         rows = await self.database.fetch_all(
             "SELECT id FROM gaming_sessions WHERE expires_at <= ?", (int(now.timestamp()),)

@@ -58,11 +58,19 @@ def test_staff_role_ids_ignore_unset_roles() -> None:
 
 
 def test_unknown_timezone_is_rejected() -> None:
-    with pytest.raises(ValidationError, match="Unknown timezone"):
+    with pytest.raises(ValidationError, match="timezone"):
         Settings(discord_token="t", discord_guild_id=1, timezone="Mars/Olympus")
 
 
 def test_timezone_defaults_to_brussels() -> None:
     settings = Settings(discord_token="t", discord_guild_id=1)
 
-    assert settings.tz.key == "Europe/Brussels"
+    assert settings.timezone.key == "Europe/Brussels"
+
+
+def test_timezone_is_read_from_environment(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("TIMEZONE", "Europe/Paris")
+
+    settings = Settings(discord_token="t", discord_guild_id=1)
+
+    assert settings.timezone.key == "Europe/Paris"

@@ -62,7 +62,7 @@ class Gaming(commands.Cog):
         duree: app_commands.Range[int, 1, MAX_DURATION_HOURS] = DEFAULT_DURATION_HOURS,
     ) -> None:
         channel = self._cards_channel(interaction)
-        now = datetime.now(self.bot.settings.tz)
+        now = datetime.now(self.bot.settings.timezone)
         planned = plan_session(
             guild_id=interaction.guild_id or 0,
             channel_id=channel.id,

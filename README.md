@@ -108,7 +108,7 @@ Avec `PRESENCE_ENABLED=true`, `/en-jeu` liste les membres en jeu, regroupés par
 
 ### Billy
 
-Billy est le personnage IA de Mingati : anxieux, maladroit, sympa, réponses courtes. Il ne lit **pas** tous les messages.
+Billy est le souffre-douleur de Mingati : anxieux et maladroit, mais avec une répartie redoutable. Clashe-le, il te renvoie la vanne en te visant par ton pseudo (réponses courtes). Limites fixées dans sa personnalité : vannes de potes uniquement, jamais d'insulte raciste, sexiste, homophobe, sur le handicap, la famille ou la santé. Il ne lit **pas** tous les messages.
 
 - `/billy question` : réponse courte (≈ 200 tokens max, 1 500 caractères max).
 - `@Billy …` : optionnel, `BILLY_MENTIONS_ENABLED=true`. N'utilise que l'intent non privilégié *Guild Messages* : Discord livre le contenu des messages qui mentionnent le bot même sans *Message Content* ([doc](https://github.com/discord/discord-api-docs/blob/main/developers/events/gateway.mdx)).
@@ -124,7 +124,9 @@ Un seul provider générique parle le format OpenAI *chat completions* : changer
 | `LLM_PROVIDER` | Clé | `LLM_MODEL` (exemple) | Offre gratuite |
 |---|---|---|---|
 | `gemini` | `GEMINI_API_KEY` ([AI Studio](https://aistudio.google.com/apikey)) | `gemini-3.8-flash` | Quotas visibles dans AI Studio ([doc](https://ai.google.dev/gemini-api/docs/rate-limits)) |
-| `groq` | `GROQ_API_KEY` ([console](https://console.groq.com/keys)) | `openai/gpt-oss-120b` | 30 req/min, 1 000 req/jour ([doc](https://console.groq.com/docs/rate-limits)) |
+| `groq` (**par défaut**) | `GROQ_API_KEY` ([console](https://console.groq.com/keys)) | `qwen/qwen3.8-27b` | 30 req/min, 1 000 req/jour ([doc](https://console.groq.com/docs/rate-limits)) |
+
+`qwen/qwen3.8-27b` a été retenu après test en direct : 0,1 à 0,3 s par réponse, répartie naturelle. `openai/gpt-oss-20b` renvoie des réponses vides (son raisonnement interne consomme toute la limite de 200 tokens).
 
 Sans clé ou sans `LLM_MODEL`, `/billy` répond que l'IA n'est pas configurée ; `/blague` et la bienvenue marchent quand même.
 

@@ -27,6 +27,7 @@ EXTENSIONS = (
     "mingati.cogs.gaming",
     "mingati.cogs.free_games",
     "mingati.cogs.billy",
+    "mingati.cogs.hub",
 )
 
 

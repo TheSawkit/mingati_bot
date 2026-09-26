@@ -4,7 +4,6 @@ import random
 from collections.abc import Hashable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
-from typing import TypeGuard
 
 import aiosqlite
 import discord
@@ -50,11 +49,6 @@ class ReconcileReport:
     removed: int = 0
     transferred: list[VoiceRoom] = field(default_factory=list)
     created: list[VoiceRoom] = field(default_factory=list)
-
-
-def is_voice_channel(channel: object) -> TypeGuard[discord.VoiceChannel]:
-    """Voice (not stage, not text) channel check that also accepts test doubles."""
-    return getattr(channel, "type", None) == discord.ChannelType.voice
 
 
 def room_name(display_name: str) -> str:
@@ -263,7 +257,7 @@ class VoiceRoomService:
         async with self._lifecycle:
             existing = await self.store.get_by_owner(owner.guild.id, owner.id)
             channel = owner.guild.get_channel(existing.channel_id) if existing else None
-            if existing and is_voice_channel(channel):
+            if existing and isinstance(channel, discord.VoiceChannel):
                 await self._grant_access(channel, guests)
                 return existing, False
 
@@ -305,7 +299,7 @@ class VoiceRoomService:
 
             for trigger_id in self.trigger_ids:
                 trigger = guild.get_channel(trigger_id)
-                if not is_voice_channel(trigger):
+                if not isinstance(trigger, discord.VoiceChannel):
                     log.warning("Voice trigger channel %s not found in guild", trigger_id)
                     continue
                 for member in humans(trigger.members):
@@ -395,7 +389,7 @@ class VoiceRoomService:
         existing = await self.store.get_by_owner(member.guild.id, member.id)
         if existing:
             channel = member.guild.get_channel(existing.channel_id)
-            if is_voice_channel(channel):
+            if isinstance(channel, discord.VoiceChannel):
                 await self._move_or_cleanup(member, channel)
                 return None
             await self.store.delete(existing.channel_id)
@@ -439,7 +433,7 @@ class VoiceRoomService:
 
     async def _prune(self, guild: discord.Guild, room: VoiceRoom) -> bool:
         channel = guild.get_channel(room.channel_id)
-        if not is_voice_channel(channel):
+        if not isinstance(channel, discord.VoiceChannel):
             await self.store.delete(room.channel_id)
             return True
         if not humans(channel.members):

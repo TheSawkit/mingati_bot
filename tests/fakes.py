@@ -41,8 +41,11 @@ class FakeVoiceChannel:
     members: list["FakeMember"] = field(default_factory=list)
     sent: list[dict[str, Any]] = field(default_factory=list)
     deleted: bool = False
-    type: discord.ChannelType = discord.ChannelType.voice
     id: int = field(default_factory=lambda: next(_ids))
+
+    @property
+    def __class__(self) -> type:
+        return discord.VoiceChannel
 
     async def edit(self, **changes: Any) -> None:
         for key, value in changes.items():

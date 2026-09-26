@@ -4,7 +4,7 @@ import discord
 
 from mingati.errors import UserFacingError
 from mingati.services.gaming_sessions import GamingSession, GamingSessionService
-from mingati.services.voice_rooms import VoiceRoom, VoiceRoomService, is_voice_channel
+from mingati.services.voice_rooms import VoiceRoom, VoiceRoomService
 
 
 @dataclass(frozen=True, slots=True)
@@ -26,9 +26,8 @@ async def open_session_voice(
     """Give a gaming session its voice room: players only, reused when it already exists."""
     if actor.id not in session.member_ids:
         raise UserFacingError("Rejoins la session avant de créer son vocal.")
-    if session.voice_channel_id and is_voice_channel(
-        actor.guild.get_channel(session.voice_channel_id)
-    ):
+    existing = actor.guild.get_channel(session.voice_channel_id or 0)
+    if isinstance(existing, discord.VoiceChannel):
         return SessionVoice(session, session.voice_channel_id, already_open=True)
     if trigger is None:
         raise UserFacingError("Aucun salon « Créer un vocal » gaming n'est configuré.")

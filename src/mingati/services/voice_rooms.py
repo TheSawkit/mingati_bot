@@ -20,6 +20,10 @@ MAX_USER_LIMIT = 99
 RENAME_TIMEOUT_SECONDS = 10
 
 
+class OwnerAlreadyHasRoomError(Exception):
+    """The chosen member already owns another temporary room (one room per owner)."""
+
+
 @dataclass(frozen=True, slots=True)
 class VoiceRoom:
     channel_id: int
@@ -196,7 +200,7 @@ class VoiceRoomStore:
                 (owner_id, channel_id),
             )
         except aiosqlite.IntegrityError as error:
-            raise UserFacingError("Cette personne a déjà son propre salon vocal.") from error
+            raise OwnerAlreadyHasRoomError(owner_id) from error
 
     async def set_locked(self, channel_id: int, locked: bool) -> None:
         await self.database.execute(
@@ -373,7 +377,10 @@ class VoiceRoomService:
         if new_owner.bot or new_owner not in channel.members:
             raise UserFacingError("Le nouveau propriétaire doit être dans le salon.")
         async with self._lifecycle:
-            return await self._assign_owner(room, channel, new_owner)
+            try:
+                return await self._assign_owner(room, channel, new_owner)
+            except OwnerAlreadyHasRoomError as error:
+                raise UserFacingError("Cette personne a déjà son propre salon vocal.") from error
 
     async def close(self, actor: discord.Member, channel: discord.VoiceChannel) -> None:
         await self.require_owned_room(actor, channel.id)
@@ -464,7 +471,7 @@ class VoiceRoomService:
         for successor in successor_candidates(channel.members):
             try:
                 return await self._assign_owner(room, channel, successor)
-            except UserFacingError:
+            except OwnerAlreadyHasRoomError:
                 log.info("Member %s already owns a room, trying another successor", successor.id)
         return None
 

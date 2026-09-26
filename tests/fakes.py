@@ -114,6 +114,7 @@ class FakeGuild:
         *,
         category: FakeCategory | None,
         bitrate: int,
+        user_limit: int = 0,
         overwrites: dict[Any, discord.PermissionOverwrite] | None = None,
     ) -> FakeVoiceChannel:
         await asyncio.sleep(0)
@@ -121,6 +122,7 @@ class FakeGuild:
             raise http_error(discord.Forbidden, 403)
         channel = self.add_voice_channel(name, category)
         channel.bitrate = bitrate
+        channel.user_limit = user_limit
         channel.overwrites = dict(overwrites or {})
         self.created.append(channel)
         return channel

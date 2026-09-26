@@ -41,5 +41,6 @@ def setup_logging(level: str) -> LastErrorHandler:
     last_error = LastErrorHandler()
     root.addHandler(last_error)
 
-    logging.getLogger("discord").setLevel(max(logging.INFO, root.level))
+    for noisy in ("discord", "aiosqlite"):
+        logging.getLogger(noisy).setLevel(max(logging.INFO, root.level))
     return last_error

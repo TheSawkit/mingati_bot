@@ -1,5 +1,6 @@
 import asyncio
 import random
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import discord
@@ -368,3 +369,54 @@ def test_inherited_overwrites_do_not_mutate_the_category() -> None:
     assert copied["staff"].manage_roles is None
     assert copied["staff"].connect is True
     assert original.manage_roles is True
+
+
+async def test_session_room_is_open_to_every_player_and_sized_for_the_session(
+    service, guild, trigger
+) -> None:
+    owner = guild.add_member("Alice")
+    guest = discord.Object(4242)
+
+    room, created = await service.open_session_room(owner, trigger, "🎮 Valorant", [guest], 5)
+
+    channel = guild.get_channel(room.channel_id)
+    assert created
+    assert channel.name == "🎮 Valorant"
+    assert channel.user_limit == 5
+    assert channel.overwrites[guest].connect is True
+    assert channel.overwrites[owner].connect is True
+    assert owner.voice is None
+
+
+async def test_session_room_reuses_the_owner_room(service, guild, trigger) -> None:
+    owner, room, channel = await open_room(service, guild, trigger)
+    guest = discord.Object(4242)
+
+    reused, created = await service.open_session_room(owner, trigger, "🎮 Valorant", [guest], 5)
+
+    assert not created
+    assert reused == room
+    assert channel.overwrites[guest].connect is True
+    assert len(guild.created) == 1
+
+
+async def test_session_room_moves_an_owner_already_in_voice(service, guild, trigger) -> None:
+    owner = guild.add_member("Alice")
+    owner.connect_to(guild.add_voice_channel("Général"))
+
+    room, _ = await service.open_session_room(owner, trigger, "🎮 Valorant", [], 4)
+
+    assert owner.voice.channel.id == room.channel_id
+
+
+async def test_sweep_deletes_old_rooms_nobody_joined(service, guild, trigger) -> None:
+    owner = guild.add_member("Alice")
+    unused, _ = await service.open_session_room(owner, trigger, "🎮 Valorant", [], 4)
+    _, _, busy = await open_room(service, guild, trigger, "Bob")
+
+    assert await service.sweep_unused(guild, datetime.now(UTC) - timedelta(minutes=10)) == 0
+    removed = await service.sweep_unused(guild, datetime.now(UTC) + timedelta(seconds=1))
+
+    assert removed == 1
+    assert guild.get_channel(unused.channel_id) is None
+    assert not busy.deleted

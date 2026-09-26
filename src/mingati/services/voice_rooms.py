@@ -3,6 +3,7 @@ import logging
 import random
 from collections.abc import Hashable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
+from datetime import UTC, datetime
 from typing import TypeGuard
 
 import aiosqlite
@@ -13,6 +14,7 @@ from mingati.errors import UserFacingError
 
 log = logging.getLogger(__name__)
 
+SQLITE_TIMESTAMP = "%Y-%m-%dT%H:%M:%SZ"
 MAX_NAME_LENGTH = 100
 MAX_USER_LIMIT = 99
 RENAME_TIMEOUT_SECONDS = 10
@@ -161,9 +163,16 @@ class VoiceRoomStore:
         )
         return VoiceRoom.from_row(row) if row else None
 
-    async def list(self, guild_id: int) -> list[VoiceRoom]:
+    async def list_for_guild(self, guild_id: int) -> list[VoiceRoom]:
         rows = await self.database.fetch_all(
             "SELECT * FROM temporary_voice_channels WHERE guild_id = ?", (guild_id,)
+        )
+        return [VoiceRoom.from_row(row) for row in rows]
+
+    async def list_created_before(self, guild_id: int, cutoff: datetime) -> list[VoiceRoom]:
+        rows = await self.database.fetch_all(
+            "SELECT * FROM temporary_voice_channels WHERE guild_id = ? AND created_at <= ?",
+            (guild_id, cutoff.astimezone(UTC).strftime(SQLITE_TIMESTAMP)),
         )
         return [VoiceRoom.from_row(row) for row in rows]
 
@@ -235,6 +244,52 @@ class VoiceRoomService:
                 return await self._transfer_to_successor(room, channel)
             return None
 
+    async def open_session_room(
+        self,
+        owner: discord.Member,
+        trigger: discord.VoiceChannel,
+        name: str,
+        guests: Sequence[discord.abc.Snowflake],
+        user_limit: int,
+    ) -> tuple[VoiceRoom, bool]:
+        """Room for a gaming session: reuse the owner's room or create one open to every player.
+
+        Returns the room and whether it was just created.
+        """
+        async with self._lifecycle:
+            existing = await self.store.get_by_owner(owner.guild.id, owner.id)
+            channel = owner.guild.get_channel(existing.channel_id) if existing else None
+            if existing and is_voice_channel(channel):
+                await self._grant_access(channel, guests)
+                return existing, False
+
+            channel = await self._create_channel(
+                trigger, validate_name(name), [owner, *guests], validate_limit(user_limit)
+            )
+            room = VoiceRoom(channel.id, owner.guild.id, owner.id, trigger.id)
+            await self.store.add(room)
+            log.info("Created session voice room %s for member %s", channel.id, owner.id)
+            if owner.voice is not None:
+                try:
+                    await owner.move_to(channel)
+                except discord.HTTPException:
+                    log.info("Could not move member %s into session room", owner.id)
+            return room, True
+
+    async def sweep_unused(self, guild: discord.Guild, created_before: datetime) -> int:
+        """Delete rooms nobody is in that are older than the grace period (e.g. never joined)."""
+        removed = 0
+        async with self._lifecycle:
+            for room in await self.store.list_created_before(guild.id, created_before):
+                channel = guild.get_channel(room.channel_id)
+                if not is_voice_channel(channel):
+                    await self.store.delete(room.channel_id)
+                    removed += 1
+                elif not humans(channel.members):
+                    await self._delete(channel)
+                    removed += 1
+        return removed
+
     async def forget(self, channel_id: int) -> None:
         if await self.store.delete(channel_id):
             log.info("Temporary voice room %s was deleted outside the bot", channel_id)
@@ -243,7 +298,7 @@ class VoiceRoomService:
         """Repair state after downtime: drop dead rooms, fix owners, serve waiting members."""
         report = ReconcileReport()
         async with self._lifecycle:
-            for room in await self.store.list(guild.id):
+            for room in await self.store.list_for_guild(guild.id):
                 channel = guild.get_channel(room.channel_id)
                 if not is_voice_channel(channel):
                     await self.store.delete(room.channel_id)
@@ -350,7 +405,7 @@ class VoiceRoomService:
                 return None
             await self.store.delete(existing.channel_id)
 
-        channel = await self._create_channel(member, trigger)
+        channel = await self._create_channel(trigger, room_name(member.display_name), [member])
         room = VoiceRoom(
             channel_id=channel.id,
             guild_id=member.guild.id,
@@ -362,20 +417,32 @@ class VoiceRoomService:
         return room if await self._move_or_cleanup(member, channel) else None
 
     async def _create_channel(
-        self, member: discord.Member, trigger: discord.VoiceChannel
+        self,
+        trigger: discord.VoiceChannel,
+        name: str,
+        allowed: Sequence[discord.abc.Snowflake],
+        user_limit: int = 0,
     ) -> discord.VoiceChannel:
-        guild = member.guild
+        guild = trigger.guild
         category = trigger.category
         base = inherited_overwrites(category.overwrites) if category else {}
-        options = {"name": room_name(member.display_name), "category": category}
+        options = {"name": name, "category": category, "user_limit": user_limit}
         bitrate = int(guild.bitrate_limit)
         try:
             return await guild.create_voice_channel(
-                **options, bitrate=bitrate, overwrites=with_member_access(base, [member])
+                **options, bitrate=bitrate, overwrites=with_member_access(base, allowed)
             )
         except discord.Forbidden:
             log.warning("Cannot copy category overwrites, creating room with inherited defaults")
             return await guild.create_voice_channel(**options, bitrate=bitrate)
+
+    async def _grant_access(
+        self, channel: discord.VoiceChannel, members: Sequence[discord.abc.Snowflake]
+    ) -> None:
+        try:
+            await channel.edit(overwrites=with_member_access(channel.overwrites, members))
+        except discord.Forbidden:
+            log.warning("Missing Manage Roles, could not open room %s to players", channel.id)
 
     async def _move_or_cleanup(self, member: discord.Member, channel: discord.VoiceChannel) -> bool:
         try:

@@ -1,17 +1,20 @@
 from __future__ import annotations
 
 import logging
+from datetime import UTC, datetime, timedelta
 
 import discord
 from discord import app_commands
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 from mingati.bot import MingatiBot
 from mingati.errors import UserFacingError
-from mingati.services.voice_rooms import VoiceRoom, VoiceRoomService, VoiceRoomStore, humans
+from mingati.services.voice_rooms import VoiceRoom, humans
 from mingati.views.voice import VoiceControlView, build_panel_embed
 
 log = logging.getLogger(__name__)
+
+UNUSED_ROOM_GRACE = timedelta(minutes=10)
 
 
 class Voice(commands.Cog):
@@ -21,15 +24,35 @@ class Voice(commands.Cog):
 
     def __init__(self, bot: MingatiBot) -> None:
         self.bot = bot
-        self.service = VoiceRoomService(
-            VoiceRoomStore(bot.database), bot.settings.voice_trigger_ids
-        )
+        self.service = bot.voice_rooms
         self.panel = VoiceControlView(self)
 
     async def cog_load(self) -> None:
         self.bot.add_view(self.panel)
+        self.sweep_unused_rooms.start()
         if not self.service.trigger_ids:
             log.warning("No CHANNEL_CREATE_VOICE_*_ID configured, temporary rooms are disabled")
+
+    async def cog_unload(self) -> None:
+        self.sweep_unused_rooms.cancel()
+
+    @tasks.loop(minutes=5)
+    async def sweep_unused_rooms(self) -> None:
+        guild = self.bot.get_guild(self.bot.settings.discord_guild_id)
+        if guild is None:
+            return
+        cutoff = datetime.now(UTC) - UNUSED_ROOM_GRACE
+        removed = await self.service.sweep_unused(guild, cutoff)
+        if removed:
+            log.info("Swept %d unused voice rooms", removed)
+
+    @sweep_unused_rooms.before_loop
+    async def before_sweep(self) -> None:
+        await self.bot.wait_until_ready()
+
+    @commands.Cog.listener()
+    async def on_voice_room_created(self, room: VoiceRoom) -> None:
+        await self.post_panel(room)
 
     @commands.Cog.listener()
     async def on_ready(self) -> None:

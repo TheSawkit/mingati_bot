@@ -1,7 +1,6 @@
 import asyncio
 import random
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
 
 import discord
 import pytest
@@ -22,14 +21,6 @@ from mingati.services.voice_rooms import (
 )
 
 from fakes import FakeCategory, FakeGuild, FakeVoiceChannel
-
-
-@pytest.fixture
-async def database(tmp_path: Path):
-    database = Database(tmp_path / "test.db")
-    await database.connect()
-    yield database
-    await database.close()
 
 
 @pytest.fixture

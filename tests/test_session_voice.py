@@ -1,5 +1,4 @@
 from datetime import datetime
-from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import discord
@@ -17,9 +16,7 @@ NOW = datetime(2026, 9, 26, 20, 0, tzinfo=ZoneInfo("Europe/Brussels"))
 
 
 @pytest.fixture
-async def context(tmp_path: Path):
-    database = Database(tmp_path / "test.db")
-    await database.connect()
+async def context(database: Database):
     guild = FakeGuild()
     trigger = guild.add_voice_channel("CRÉER UN VOCAL", FakeCategory())
     sessions = GamingSessionService(database)
@@ -41,8 +38,7 @@ async def context(tmp_path: Path):
         NOW,
     )
     session = await sessions.join(session.id, 4242)
-    yield guild, trigger, sessions, voice_rooms, host, session
-    await database.close()
+    return guild, trigger, sessions, voice_rooms, host, session
 
 
 async def test_player_opens_a_room_shared_with_the_other_players(context) -> None:

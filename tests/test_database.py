@@ -12,39 +12,35 @@ def write_migrations(directory: Path, *scripts: str) -> Path:
     return directory
 
 
-async def test_applies_migrations_in_order_and_tracks_version(tmp_path: Path) -> None:
+async def test_applies_migrations_in_order_and_tracks_version(
+    tmp_path: Path, open_database
+) -> None:
     migrations = write_migrations(
         tmp_path / "migrations",
         "CREATE TABLE a (id INTEGER PRIMARY KEY);",
         "ALTER TABLE a ADD COLUMN name TEXT;",
     )
-    database = Database(tmp_path / "db" / "test.db", migrations)
-    await database.connect()
+    database = await open_database(migrations, "db/test.db")
 
     await database.execute("INSERT INTO a (name) VALUES (?)", ("billy",))
 
     assert await database.schema_version() == 2
     row = await database.fetch_one("SELECT name FROM a")
     assert row is not None and row["name"] == "billy"
-    await database.close()
 
 
-async def test_reconnecting_only_applies_new_migrations(tmp_path: Path) -> None:
+async def test_reconnecting_only_applies_new_migrations(tmp_path: Path, open_database) -> None:
     migrations = write_migrations(tmp_path / "m", "CREATE TABLE a (id INTEGER);")
-    path = tmp_path / "test.db"
-    first = Database(path, migrations)
-    await first.connect()
+    first = await open_database(migrations)
     await first.close()
 
     write_migrations(migrations, "CREATE TABLE a (id INTEGER);", "CREATE TABLE b (id INTEGER);")
-    second = Database(path, migrations)
-    await second.connect()
+    second = await open_database(migrations)
 
     assert await second.schema_version() == 2
-    await second.close()
 
 
-async def test_failed_migration_is_rolled_back(tmp_path: Path) -> None:
+async def test_failed_migration_is_rolled_back(tmp_path: Path, open_database) -> None:
     migrations = write_migrations(
         tmp_path / "m", "CREATE TABLE a (id INTEGER); INSERT INTO missing VALUES (1);"
     )
@@ -53,15 +49,16 @@ async def test_failed_migration_is_rolled_back(tmp_path: Path) -> None:
     with pytest.raises(Exception, match="missing"):
         await database.connect()
 
-    assert await database.schema_version() == 0
-    assert await database.fetch_all("SELECT name FROM sqlite_master WHERE name = 'a'") == []
-    await database.close()
+    try:
+        assert await database.schema_version() == 0
+        assert await database.fetch_all("SELECT name FROM sqlite_master WHERE name = 'a'") == []
+    finally:
+        await database.close()
 
 
-async def test_transaction_rolls_back_on_error(tmp_path: Path) -> None:
+async def test_transaction_rolls_back_on_error(tmp_path: Path, open_database) -> None:
     migrations = write_migrations(tmp_path / "m", "CREATE TABLE a (id INTEGER);")
-    database = Database(tmp_path / "test.db", migrations)
-    await database.connect()
+    database = await open_database(migrations)
 
     with pytest.raises(RuntimeError):
         async with database.transaction() as connection:
@@ -69,21 +66,18 @@ async def test_transaction_rolls_back_on_error(tmp_path: Path) -> None:
             raise RuntimeError("boom")
 
     assert await database.fetch_all("SELECT * FROM a") == []
-    await database.close()
 
 
-async def test_foreign_keys_are_enforced(tmp_path: Path) -> None:
+async def test_foreign_keys_are_enforced(tmp_path: Path, open_database) -> None:
     migrations = write_migrations(
         tmp_path / "m",
         "CREATE TABLE p (id INTEGER PRIMARY KEY);"
         "CREATE TABLE c (p_id INTEGER NOT NULL REFERENCES p(id));",
     )
-    database = Database(tmp_path / "test.db", migrations)
-    await database.connect()
+    database = await open_database(migrations)
 
     with pytest.raises(Exception, match="FOREIGN KEY"):
         await database.execute("INSERT INTO c VALUES (99)")
-    await database.close()
 
 
 def test_gaps_in_migration_numbers_are_rejected(tmp_path: Path) -> None:
@@ -96,18 +90,14 @@ def test_gaps_in_migration_numbers_are_rejected(tmp_path: Path) -> None:
         discover_migrations(directory)
 
 
-async def test_packaged_migrations_apply_cleanly(tmp_path: Path) -> None:
-    database = Database(tmp_path / "test.db")
-    await database.connect()
+async def test_packaged_migrations_apply_cleanly(tmp_path: Path, open_database) -> None:
+    database = await open_database()
 
     assert await database.schema_version() >= 0
-    await database.close()
 
 
-async def test_wal_uses_normal_synchronous_mode(tmp_path: Path) -> None:
-    database = Database(tmp_path / "test.db", write_migrations(tmp_path / "m"))
-    await database.connect()
+async def test_wal_uses_normal_synchronous_mode(tmp_path: Path, open_database) -> None:
+    database = await open_database(write_migrations(tmp_path / "m"))
 
     assert (await database.fetch_one("PRAGMA journal_mode"))[0] == "wal"
     assert (await database.fetch_one("PRAGMA synchronous"))[0] == 1
-    await database.close()

@@ -1,6 +1,5 @@
 import asyncio
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -22,11 +21,8 @@ HOST = 10
 
 
 @pytest.fixture
-async def service(tmp_path: Path):
-    database = Database(tmp_path / "test.db")
-    await database.connect()
-    yield GamingSessionService(database)
-    await database.close()
+def service(database: Database) -> GamingSessionService:
+    return GamingSessionService(database)
 
 
 def planned(host: int = HOST, max_players: int = 3, **overrides) -> NewSession:

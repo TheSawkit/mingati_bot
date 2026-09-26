@@ -2,7 +2,7 @@
 
 Bot Discord privé du serveur **Mingati !** (~20 potes). Petit, fiable, pensé pour tourner 24/7 sur un Raspberry Pi.
 
-> **V2 en cours de reconstruction.** Phases 1 à 6 terminées : fondations, vocaux temporaires, qui joue ?, jeux gratuits, Billy, hub. Les fonctionnalités arrivent phase par phase — voir [Roadmap](#roadmap).
+> **V2 en cours de reconstruction.** Phases 1 à 7 terminées : fondations, vocaux temporaires, qui joue ?, jeux gratuits, Billy, hub, game night et fun. Les fonctionnalités arrivent phase par phase — voir [Roadmap](#roadmap).
 
 ## Sommaire
 
@@ -28,6 +28,8 @@ Bot Discord privé du serveur **Mingati !** (~20 potes). Petit, fiable, pensé p
 | `/mingati` | Staff | Publie le hub dans le salon courant, ou le met à jour |
 | `/billy question` | Tout le monde | Pose une question à Billy (IA) |
 | `/blague` | Tout le monde | Une blague, chute cachée en spoiler |
+| `/game-night` | Tout le monde | Programme une soirée jeu (événement Discord natif) |
+| `/dé` `/coinflip` `/8ball` `/roulette` `/random-game` | Tout le monde | Commandes fun |
 
 ### Vocaux temporaires
 
@@ -80,7 +82,18 @@ Toutes les commandes sont des **slash commands** synchronisées sur le serveur M
 
 ### Hub
 
-`/mingati` publie un panneau permanent « Qu'est-ce qu'on fait ? » dans le salon où la commande est lancée. Relancée au même endroit, elle le met à jour ; ailleurs, elle le déplace. Boutons : 🎮 Qui joue ?, 🔊 Créer un vocal, 🎁 Jeux gratuits, 🤖 Billy. Les réponses sont privées : le salon reste propre.
+`/mingati` publie un panneau permanent « Qu'est-ce qu'on fait ? » dans le salon où la commande est lancée. Relancée au même endroit, elle le met à jour ; ailleurs, elle le déplace. Boutons : 🎮 Qui joue ?, 🔊 Créer un vocal, 🎁 Jeux gratuits, 🎲 Activité, 🤖 Billy. Les réponses sont privées : le salon reste propre.
+
+### Game night
+
+`/game-night jeu date heure joueurs [description]` crée un **événement Discord natif** et l'annonce dans le salon. Discord gère lui-même les inscriptions (« Intéressé »), l'agenda et la notification des intéressés au lancement : rien n'est réinventé. Le nombre de joueurs est indiqué dans la description (Discord n'impose pas de maximum).
+
+- `date` : `aujourd'hui`, `demain`, `27/09` ou `27/09/2026` ; `heure` : `21h`, `21h30`, `21:30` (fuseau `TIMEZONE`).
+- Au moins 10 minutes à l'avance, au plus 60 jours ; durée affichée : 3 h.
+
+### Fun
+
+`/dé [faces] [nombre]`, `/coinflip`, `/8ball question`, `/roulette [membre]` (1 chance sur 6), `/random-game choix:"Valorant, LoL, Minecraft"`. Une utilisation toutes les 3 s par membre. Pas d'XP, pas de niveaux.
 
 ### Billy
 
@@ -140,6 +153,7 @@ Principe du moindre privilège : **jamais `Administrator`**.
 | Manage Roles | Modifier les permissions d'un vocal : verrouiller, déverrouiller, inviter |
 | Connect | Obligatoire pour déplacer un membre dans un vocal |
 | Move Members | Déplacer le membre dans son vocal |
+| Create Events | Créer les événements `/game-night` |
 
 Sources : [Modify Channel / Edit Channel Permissions](https://discord.com/developers/docs/resources/channel) exigent `MANAGE_ROLES` pour toucher aux permissions d'un salon ; [Modify Guild Member](https://discord.com/developers/docs/resources/guild#modify-guild-member) exige `MOVE_MEMBERS` + `CONNECT` sur le salon cible.
 
@@ -281,6 +295,6 @@ La CI GitHub Actions lance ces trois étapes puis construit l'image Docker pour 
 | 4 | Jeux gratuits Steam / Epic / GOG | Terminé |
 | 5 | Billy (IA) + `/blague` + bienvenue | Terminé |
 | 6 | Hub `/mingati` | Terminé |
-| 7 | Game night + commandes fun | À faire |
+| 7 | Game night + commandes fun | Terminé |
 | 8 | Serveurs de jeux (Minecraft) | À faire |
 | 9 | Optionnel (présence…) | À valider |

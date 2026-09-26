@@ -210,6 +210,11 @@ refresh (toutes les 2 h ou /freegames refresh)
 
 `/mingati` (staff) publie un embed + `HubView` persistante (`mingati:hub:*`). La position du message est stockée dans `guild_config` (`hub_channel_id`, `hub_message_id`) : relancer la commande édite le message existant au lieu d'en créer un. Les boutons ne font que lire les services existants (`gaming_sessions.list_open`, `free_games.active`, `billy`) et répondent en éphémère.
 
+## Game night et fun
+
+- `/game-night` : `plan_game_night` (pur, testé) valide et calcule la fenêtre dans `TIMEZONE`, puis `guild.create_scheduled_event` (externe, 3 h). Pas de table : l'événement natif est la source de vérité, Discord gère inscriptions et notifications.
+- `services/fun.py` : tirages purs prenant un `random.Random` (tests déterministes, `SystemRandom` en production).
+
 ## Flux des features à venir
 
-Game night et commandes fun (phase 7), serveurs de jeux (phase 8).
+Serveurs de jeux (phase 8).

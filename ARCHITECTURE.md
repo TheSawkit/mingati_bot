@@ -26,7 +26,6 @@ src/mingati/
 │   ├── gaming_sessions.py GamingSessionService + validation /jouer (fonctions pures)
 │   └── session_voice.py   règles « Créer le vocal » d'une session (inscrits seulement, réutilisation)
 ├── interactions.py    erreurs communes slash/boutons/modals, MingatiView, MingatiModal
-├── providers/         APIs externes : jeux gratuits, IA, serveurs (phase 4+)
 ├── views/
 │   ├── voice.py       panneau persistant, modals, sélecteurs
 │   └── gaming.py      carte de session + boutons persistants
@@ -40,10 +39,9 @@ src/mingati/
 | Couche | Rôle | Dépend de |
 |---|---|---|
 | `__main__` | Assemble les pièces et gère le cycle de vie | tout |
-| `bot.py` | Bootstrap uniquement | config, database, cogs |
+| `bot.py` | Bootstrap : instancie les services partagés, charge les cogs | config, database, services, interactions |
 | `cogs/` | Traduit une interaction Discord en appel de service, formate la réponse | services, views |
-| `services/` | Règles métier, testables sans Discord | database, providers |
-| `providers/` | Parle aux APIs externes (HTTP avec timeout), normalise les données | aiohttp |
+| `services/` | Règles métier, testables sans Discord | database |
 | `views/` | Composants interactifs persistants | services |
 | `database.py` | Accès SQLite | aiosqlite |
 
@@ -155,6 +153,8 @@ GUILD_CHANNEL_DELETE → vocal détaché des sessions → cartes rafraîchies (p
 `VoiceRoomService.open_session_room` réutilise le vocal du membre s'il en a un, sinon en crée un dans la catégorie du déclencheur gaming, ouvert nommément aux inscrits (`discord.Object(id)` suffit, pas besoin de l'intent Members). Une tâche toutes les 5 minutes supprime les vocaux vides créés depuis plus de 10 minutes : un vocal jamais rejoint ne reçoit aucun événement de départ.
 
 ## Flux des features à venir
+
+Un dossier `providers/` (APIs externes via aiohttp, avec timeout) sera créé en phase 4, entre `services/` et Internet.
 
 - Jeux gratuits — phase 4
 - Billy — phase 5

@@ -66,7 +66,7 @@ Toutes les commandes sont des **slash commands** synchronisées sur le serveur M
 |---|---|
 | Langage | Python 3.12 |
 | Discord | discord.py 2.7 |
-| HTTP | aiohttp |
+| HTTP | aiohttp (APIs externes à partir de la phase 4) |
 | Stockage | SQLite via aiosqlite, migrations versionnées |
 | Configuration | pydantic-settings (variables d'environnement / `.env`) |
 | Outillage | uv, Ruff, pytest, pytest-asyncio |
@@ -110,7 +110,7 @@ Sans `Manage Roles`, les vocaux sont quand même créés et supprimés ; seuls v
 | Guilds | Oui | Toujours |
 | Voice States | Oui | Vocaux temporaires (non privilégié) |
 | Message Content | Non | Uniquement si le mode `@Billy` est activé (phase 5) |
-| Server Members | Non | Uniquement si réellement nécessaire |
+| Server Members | Non | Prévu en phase 5 (message de bienvenue, retrait des sessions quand un membre part) |
 | Presence | Non | Uniquement si la feature présence est activée (phase 9) |
 
 ## Configuration
@@ -179,6 +179,18 @@ Image construite pour ARM64 en CI ; cible : Raspberry Pi OS 64 bits (Pi 4 / Pi 5
 | Mettre à jour | `git pull && docker compose up -d --build` |
 | Arrêter | `docker compose down` |
 | Sauvegarder la base | `cp data/mingati.db data/mingati.db.bak` (bot arrêté) |
+
+### Remplacer l'ancien bot (V1)
+
+**Pas avant la phase 5.** La V2 n'a pas encore les jeux gratuits (phase 4), Billy ni le message de bienvenue (phase 5). La commande « @bot dis … » de la V1 est abandonnée volontairement.
+
+Le jour de la bascule, sur le Pi :
+
+1. Supprimer à la main les salons « *'s Palace* » encore ouverts : la V2 ne touche qu'aux salons qu'elle a créés.
+2. `git pull`
+3. Mettre à jour `.env` : `DISCORD_SECRET_CLIENT` devient `DISCORD_TOKEN`, et il faut ajouter `DISCORD_GUILD_ID` et les IDs de salons (partir de `.env.example`).
+4. `sudo chown -R 1000:1000 data` : la V1 tournait en root, la V2 tourne en utilisateur 1000.
+5. `docker compose up -d --build --remove-orphans` : `--remove-orphans` arrête l'ancien conteneur `mingati_bot_prod`. Sans ça, deux bots répondent en même temps.
 
 ## Tests et qualité
 

@@ -1,6 +1,7 @@
 import logging
 from datetime import UTC, datetime
 
+import aiohttp
 import discord
 from discord import app_commands
 from discord.ext import commands
@@ -8,13 +9,21 @@ from discord.ext import commands
 from mingati.config import Settings
 from mingati.database import Database
 from mingati.interactions import report_error
+from mingati.providers.games import default_game_providers
+from mingati.providers.http import create_http_session
+from mingati.services.free_games import FreeGameService
 from mingati.services.gaming_sessions import GamingSessionService
 from mingati.services.voice_rooms import VoiceRoomService, VoiceRoomStore
 from mingati.utils.logging import LastErrorHandler
 
 log = logging.getLogger(__name__)
 
-EXTENSIONS = ("mingati.cogs.core", "mingati.cogs.voice", "mingati.cogs.gaming")
+EXTENSIONS = (
+    "mingati.cogs.core",
+    "mingati.cogs.voice",
+    "mingati.cogs.gaming",
+    "mingati.cogs.free_games",
+)
 
 
 def build_intents() -> discord.Intents:
@@ -48,6 +57,8 @@ class MingatiBot(commands.Bot):
         self.last_error = last_error
         self.voice_rooms = VoiceRoomService(VoiceRoomStore(database), settings.voice_trigger_ids)
         self.gaming_sessions = GamingSessionService(database)
+        self.free_games = FreeGameService(database, default_game_providers(settings.store_country))
+        self.http_session: aiohttp.ClientSession | None = None
         self.started_at = datetime.now(UTC)
 
     @property
@@ -55,11 +66,17 @@ class MingatiBot(commands.Bot):
         return discord.Object(id=self.settings.discord_guild_id)
 
     async def setup_hook(self) -> None:
+        self.http_session = create_http_session()
         for extension in EXTENSIONS:
             await self.load_extension(extension)
         self.tree.copy_global_to(guild=self.guild_object)
         synced = await self.tree.sync(guild=self.guild_object)
         log.info("Synced %d slash commands to guild %s", len(synced), self.guild_object.id)
+
+    async def close(self) -> None:
+        if self.http_session is not None:
+            await self.http_session.close()
+        await super().close()
 
     async def on_ready(self) -> None:
         log.info("Connected as %s", self.user)

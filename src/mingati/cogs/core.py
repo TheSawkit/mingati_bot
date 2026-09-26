@@ -42,6 +42,7 @@ class Core(commands.Cog):
         embed.add_field(name="Uptime", value=format_uptime(datetime.now(UTC) - self.bot.started_at))
         embed.add_field(name="Latence Discord", value=f"{self.bot.latency * 1000:.0f} ms")
         embed.add_field(name="SQLite", value=await self._database_status(), inline=False)
+        embed.add_field(name="Jeux gratuits", value=await self._free_games_status(), inline=False)
         embed.add_field(name="Dernière erreur", value=self._last_error(), inline=False)
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
@@ -52,6 +53,14 @@ class Core(commands.Cog):
             log.exception("SQLite health check failed")
             return "En erreur"
         return f"OK (schéma v{version})"
+
+    async def _free_games_status(self) -> str:
+        last = await self.bot.free_games.last_success()
+        if last is None:
+            return "Jamais rafraîchi"
+        return (
+            f"Dernier refresh {discord.utils.format_dt(last, 'R')} · détail : `/freegames status`"
+        )
 
     def _last_error(self) -> str:
         error = self.bot.last_error.last_error

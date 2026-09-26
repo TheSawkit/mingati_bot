@@ -39,6 +39,7 @@ class Settings(BaseSettings):
     database_path: Path = Path("data/mingati.db")
     log_level: LogLevel = "INFO"
     timezone: ZoneInfo = ZoneInfo("Europe/Brussels")
+    store_country: str = "BE"
 
     @property
     def voice_trigger_ids(self) -> frozenset[int]:

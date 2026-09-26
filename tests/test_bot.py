@@ -65,6 +65,7 @@ async def test_cogs_register_expected_commands_and_persistent_views(tmp_path: Pa
             "bot": ["status"],
             "vocal": ["close", "invite", "limit", "lock", "rename", "transfer", "unlock"],
             "jouer": [],
+            "freegames": ["refresh", "status"],
         }
         assert len(bot.persistent_views) == 2
         assert all(view.is_persistent() for view in bot.persistent_views)

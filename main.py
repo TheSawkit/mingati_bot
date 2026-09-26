@@ -60,6 +60,13 @@ intents.voice_states = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
+# Voice channel triggers for automatic personal rooms.
+# Use channel IDs so renaming or moving the triggers cannot break the bot.
+CREATE_VOICE_CHANNEL_IDS = {
+    1336908817551855666,
+    1337126878112383058,
+}
+
 SENT_GAMES_FILE = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "data", ".sent_games.json"
 )
@@ -141,12 +148,8 @@ async def on_member_join(member):
 
 @bot.event
 async def on_voice_state_update(member, before, after):
-    if (
-        after.channel
-        and after.channel.name == "➕・CRÉER UN SALON"
-        and after.channel.category.name.startswith(("↽ 🎮・Gaming", "↽ 💬・Forum"))
-    ):
-        await create_channel(member, 96000) #128kbps avec Boost, 96kbps par défaut
+    if after.channel and after.channel.id in CREATE_VOICE_CHANNEL_IDS:
+        await create_channel(member, 96000)  # 96 kbps par défaut, jusqu'à 128 kbps avec Boost
     if (
         before.channel
         and before.channel.name.endswith("'s Palace")

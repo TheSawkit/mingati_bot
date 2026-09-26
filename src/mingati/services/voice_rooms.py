@@ -278,13 +278,7 @@ class VoiceRoomService:
         removed = 0
         async with self._lifecycle:
             for room in await self.store.list_created_before(guild.id, created_before):
-                channel = guild.get_channel(room.channel_id)
-                if not is_voice_channel(channel):
-                    await self.store.delete(room.channel_id)
-                    removed += 1
-                elif not humans(channel.members):
-                    await self._delete(channel)
-                    removed += 1
+                removed += await self._prune(guild, room)
         return removed
 
     async def forget(self, channel_id: int) -> None:
@@ -296,14 +290,11 @@ class VoiceRoomService:
         report = ReconcileReport()
         async with self._lifecycle:
             for room in await self.store.list_for_guild(guild.id):
+                if await self._prune(guild, room):
+                    report.removed += 1
+                    continue
                 channel = guild.get_channel(room.channel_id)
-                if not is_voice_channel(channel):
-                    await self.store.delete(room.channel_id)
-                    report.removed += 1
-                elif not humans(channel.members):
-                    await self._delete(channel)
-                    report.removed += 1
-                elif room.owner_id not in {member.id for member in channel.members}:
+                if room.owner_id not in {member.id for member in channel.members}:
                     new_room = await self._transfer_to_successor(room, channel)
                     if new_room:
                         report.transferred.append(new_room)
@@ -438,6 +429,16 @@ class VoiceRoomService:
         except discord.Forbidden:
             log.warning("Cannot copy category overwrites, creating room with inherited defaults")
             return await guild.create_voice_channel(**options, bitrate=bitrate)
+
+    async def _prune(self, guild: discord.Guild, room: VoiceRoom) -> bool:
+        channel = guild.get_channel(room.channel_id)
+        if not is_voice_channel(channel):
+            await self.store.delete(room.channel_id)
+            return True
+        if not humans(channel.members):
+            await self._delete(channel)
+            return True
+        return False
 
     async def _grant_access(
         self, channel: discord.VoiceChannel, members: Sequence[discord.abc.Snowflake]

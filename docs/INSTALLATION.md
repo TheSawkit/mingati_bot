@@ -29,7 +29,7 @@ Ce guide va de zéro à un bot qui tourne 24 h/24. Aucune connaissance en progra
 
 Le bot consomme environ **60 à 100 Mo de mémoire** et presque rien en processeur : n'importe quel Pi récent suffit.
 
-> **Pas de Pi ?** L'offre gratuite de Google Cloud comprend une petite machine `e2-micro` permanente (régions US uniquement, carte bancaire demandée) : [détails](https://docs.cloud.google.com/free/docs/free-cloud-features). Le bot s'y installe exactement comme sur un Pi.
+> **Pas de Pi ?** Google Cloud offre une machine `e2-micro` et 30 Go de disque standard dans 3 régions US ([détails](https://docs.cloud.google.com/free/docs/free-cloud-features)), mais **pas l'adresse IPv4 publique** : 0,005 $/heure, soit environ 3,65 $/mois, gratuite une heure par mois seulement ([tarifs réseau](https://cloud.google.com/vpc/network-pricing)). Elle est indispensable : Discord n'est pas joignable en IPv6. Compte donc environ 3,65 $/mois minimum. Le bot s'y installe exactement comme sur un Pi.
 
 ## 2. Créer le bot sur Discord
 

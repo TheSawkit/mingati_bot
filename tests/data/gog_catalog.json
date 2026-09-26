@@ -1,0 +1,59 @@
+{
+ "products": [
+  {
+   "id": "1403000599",
+   "title": "The Saboteur™",
+   "slug": "saboteur",
+   "storeLink": "https://www.gog.com/fr/game/saboteur",
+   "price": {
+    "final": "0,00 €",
+    "base": "18,25 €",
+    "discount": "-100%",
+    "finalMoney": {
+     "amount": "0.00",
+     "currency": "EUR",
+     "discount": "18.25"
+    },
+    "baseMoney": {
+     "amount": "18.25",
+     "currency": "EUR"
+    }
+   },
+   "coverHorizontal": "https://images.gog-statics.com/9a75d59eaa74cc18c107944890a824fdac9decc652c126b1de6a0f427b311bb0.png",
+   "productType": "game"
+  },
+  {
+   "id": "1207658930",
+   "title": "Heroes of Might and Magic 3",
+   "slug": "heroes",
+   "storeLink": "https://www.gog.com/fr/game/heroes",
+   "price": {
+    "finalMoney": {
+     "amount": "1.85",
+     "currency": "EUR"
+    },
+    "baseMoney": {
+     "amount": "9.99",
+     "currency": "EUR"
+    }
+   },
+   "productType": "game"
+  },
+  {
+   "id": "1",
+   "title": "Always free demo",
+   "storeLink": "https://www.gog.com/fr/game/demo",
+   "price": {
+    "finalMoney": {
+     "amount": "0.00",
+     "currency": "EUR"
+    },
+    "baseMoney": {
+     "amount": "0.00",
+     "currency": "EUR"
+    }
+   },
+   "productType": "game"
+  }
+ ]
+}

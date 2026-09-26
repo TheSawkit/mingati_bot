@@ -1,0 +1,244 @@
+{
+ "data": {
+  "Catalog": {
+   "searchStore": {
+    "elements": [
+     {
+      "title": "Astrea Six Sided Oracles",
+      "id": "7c14bf0cffdd43be968fdcf28e5af653",
+      "namespace": "a940fa38f001486a9884640924119576",
+      "productSlug": null,
+      "urlSlug": "915d7181013c40d980e1924513c7b8ec",
+      "offerMappings": [
+       {
+        "pageSlug": "astrea-six-sided-oracles-33c949",
+        "pageType": "productHome"
+       }
+      ],
+      "catalogNs": {
+       "mappings": [
+        {
+         "pageSlug": "astrea-six-sided-oracles-33c949",
+         "pageType": "productHome"
+        }
+       ]
+      },
+      "keyImages": [
+       {
+        "type": "OfferImageWide",
+        "url": "https://cdn1.epicgames.com/spt-assets/4515173972ae4444a2582bc690c150bd/astrea-six-sided-oracles-offer-bvy0n.png"
+       },
+       {
+        "type": "Thumbnail",
+        "url": "https://cdn1.epicgames.com/spt-assets/4515173972ae4444a2582bc690c150bd/download-astrea-six-sided-oracles-offer-av5rc.png"
+       }
+      ],
+      "price": {
+       "totalPrice": {
+        "discountPrice": 0,
+        "originalPrice": 2239
+       }
+      },
+      "promotions": {
+       "promotionalOffers": [
+        {
+         "promotionalOffers": [
+          {
+           "startDate": "2026-09-24T15:00:00.000Z",
+           "endDate": "2026-10-01T15:00:00.000Z",
+           "discountSetting": {
+            "discountType": "PERCENTAGE",
+            "discountPercentage": 0
+           }
+          }
+         ]
+        }
+       ],
+       "upcomingPromotionalOffers": [
+        {
+         "promotionalOffers": [
+          {
+           "startDate": "2026-10-19T15:00:00.000Z",
+           "endDate": "2026-11-02T16:00:00.000Z",
+           "discountSetting": {
+            "discountType": "PERCENTAGE",
+            "discountPercentage": 60
+           }
+          }
+         ]
+        }
+       ]
+      }
+     },
+     {
+      "title": "Eternal Threads",
+      "id": "921e40c4c69f4d728914ca2a4f0aa407",
+      "namespace": "35eda4ff87f94a7491dc28175b8f3b4f",
+      "productSlug": null,
+      "urlSlug": "a9152a8924cc4e438f0e61106ec02f7d",
+      "offerMappings": [
+       {
+        "pageSlug": "eternal-threads-197169",
+        "pageType": "productHome"
+       }
+      ],
+      "catalogNs": {
+       "mappings": [
+        {
+         "pageSlug": "eternal-threads-197169",
+         "pageType": "productHome"
+        }
+       ]
+      },
+      "keyImages": [
+       {
+        "type": "OfferImageWide",
+        "url": "https://cdn1.epicgames.com/spt-assets/08813e055af64315b8a55b2e521f4e04/eternal-threads-1vm6i.jpg"
+       },
+       {
+        "type": "Thumbnail",
+        "url": "https://cdn1.epicgames.com/spt-assets/08813e055af64315b8a55b2e521f4e04/eternal-threads-1v92y.jpg"
+       }
+      ],
+      "price": {
+       "totalPrice": {
+        "discountPrice": 1799,
+        "originalPrice": 1799
+       }
+      },
+      "promotions": null
+     },
+     {
+      "title": "LISA: Definitive Edition",
+      "id": "944b5b5d646d46bc92bc33edfe983d26",
+      "namespace": "ca3a9d16d131478c97fd56c138a6511a",
+      "productSlug": "lisa-the-definitive-edition",
+      "urlSlug": "lisa-the-definitive-edition",
+      "offerMappings": [
+       {
+        "pageSlug": "lisa-the-definitive-edition",
+        "pageType": "productHome"
+       }
+      ],
+      "catalogNs": {
+       "mappings": [
+        {
+         "pageSlug": "lisa-the-definitive-edition",
+         "pageType": "productHome"
+        }
+       ]
+      },
+      "keyImages": [
+       {
+        "type": "OfferImageWide",
+        "url": "https://cdn2.unrealengine.com/egs-lisathedefinitiveedition-dingalingproductions-bundles-s1-2560x1440-5be18c558828.jpg"
+       },
+       {
+        "type": "Thumbnail",
+        "url": "https://cdn1.epicgames.com/offer/ca3a9d16d131478c97fd56c138a6511a/EGS_LISATheDefinitiveEdition_DingalingProductions_Bundles_S2_1200x1600-4a9b4fc6e06e8aff136c1a3cf18292ae"
+       }
+      ],
+      "price": {
+       "totalPrice": {
+        "discountPrice": 1209,
+        "originalPrice": 2419
+       }
+      },
+      "promotions": {
+       "promotionalOffers": [
+        {
+         "promotionalOffers": [
+          {
+           "startDate": "2026-09-17T15:00:00.000Z",
+           "endDate": "2026-10-02T05:59:00.000Z",
+           "discountSetting": {
+            "discountType": "PERCENTAGE",
+            "discountPercentage": 50
+           }
+          }
+         ]
+        }
+       ],
+       "upcomingPromotionalOffers": [
+        {
+         "promotionalOffers": [
+          {
+           "startDate": "2026-11-01T06:00:00.000Z",
+           "endDate": "2026-11-10T06:59:00.000Z",
+           "discountSetting": {
+            "discountType": "PERCENTAGE",
+            "discountPercentage": 60
+           }
+          },
+          {
+           "startDate": "2026-12-10T16:00:00.000Z",
+           "endDate": "2027-01-07T16:00:00.000Z",
+           "discountSetting": {
+            "discountType": "PERCENTAGE",
+            "discountPercentage": 55
+           }
+          }
+         ]
+        }
+       ]
+      }
+     },
+     {
+      "title": "System Shock 2: 25th Anniversary Remaster",
+      "id": "7ae00c3e89174012b175cc73b4737723",
+      "namespace": "a90f2381d7aa48c09b4080515a9541cd",
+      "productSlug": null,
+      "urlSlug": "system-shock-2-25th-anniversary-remaster",
+      "offerMappings": [
+       {
+        "pageSlug": "system-shock-2-25th-anniversary-remaster-cb94d9",
+        "pageType": "productHome"
+       }
+      ],
+      "catalogNs": {
+       "mappings": [
+        {
+         "pageSlug": "system-shock-2-25th-anniversary-remaster-cb94d9",
+         "pageType": "productHome"
+        }
+       ]
+      },
+      "keyImages": [
+       {
+        "type": "OfferImageWide",
+        "url": "https://cdn1.epicgames.com/spt-assets/690ff600d5134d9ab12c96862ed5257a/system-shock-2-25th-anniversary-remaster-1e28j.jpg"
+       },
+       {
+        "type": "Thumbnail",
+        "url": "https://cdn1.epicgames.com/spt-assets/690ff600d5134d9ab12c96862ed5257a/system-shock-2-25th-anniversary-remaster-15vqr.jpg"
+       }
+      ],
+      "price": {
+       "totalPrice": {
+        "discountPrice": 2699,
+        "originalPrice": 2699
+       }
+      },
+      "promotions": {
+       "promotionalOffers": [],
+       "upcomingPromotionalOffers": [
+        {
+         "promotionalOffers": [
+          {
+           "startDate": "2026-10-01T15:00:00.000Z",
+           "endDate": "2026-10-08T15:00:00.000Z",
+           "discountSetting": {
+            "discountType": "PERCENTAGE",
+            "discountPercentage": 0
+           }
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  }
+ }
+}

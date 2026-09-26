@@ -10,6 +10,7 @@ import discord
 
 from mingati.database import Database
 from mingati.errors import UserFacingError
+from mingati.utils.text import clean_text
 
 log = logging.getLogger(__name__)
 
@@ -70,7 +71,7 @@ def successor_candidates(
 
 
 def validate_name(name: str) -> str:
-    cleaned = " ".join(name.split())
+    cleaned = clean_text(name)
     if not cleaned:
         raise UserFacingError("Le nom ne peut pas être vide.")
     if len(cleaned) > MAX_NAME_LENGTH:

@@ -9,6 +9,7 @@ import discord
 
 from mingati.database import Database
 from mingati.errors import UserFacingError
+from mingati.utils.text import clean_text
 
 log = logging.getLogger(__name__)
 
@@ -54,10 +55,6 @@ class NewSession:
     max_players: int
     starts_at: datetime
     expires_at: datetime
-
-
-def clean_text(raw: str | None) -> str:
-    return " ".join((raw or "").split())
 
 
 def parse_start(raw: str | None, now: datetime) -> datetime:

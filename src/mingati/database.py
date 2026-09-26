@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import re
-from collections.abc import AsyncIterator, Iterable, Sequence
+from collections.abc import AsyncIterator, Sequence
 from contextlib import asynccontextmanager
 from importlib import resources
 from importlib.resources.abc import Traversable
@@ -87,10 +87,6 @@ class Database:
         async with self.transaction() as connection:
             cursor = await connection.execute(sql, params)
             return cursor.rowcount
-
-    async def execute_many(self, sql: str, rows: Iterable[Params]) -> None:
-        async with self.transaction() as connection:
-            await connection.executemany(sql, rows)
 
     async def fetch_one(self, sql: str, params: Params = ()) -> aiosqlite.Row | None:
         async with self._lock:

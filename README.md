@@ -21,7 +21,7 @@ Bot Discord privé du serveur **Mingati !** (~20 potes). Petit, fiable, pensé p
 
 | Commande | Qui | Description |
 |---|---|---|
-| `/bot status` | Staff | Uptime, latence, version, état SQLite, dernière erreur |
+| `/bot status` | Staff | Uptime, latence, version, SQLite, dernier refresh des jeux gratuits, providers configurés, dernière erreur |
 | `/vocal rename` `lock` `unlock` `invite` `limit` `transfer` `close` | Propriétaire du vocal | Contrôle de son vocal temporaire |
 | `/jouer` | Tout le monde | Publie une carte « qui joue ? » dans 🎯・qui-joue |
 | `/freegames refresh` `status` | Staff | Vérification manuelle et état des sources de jeux gratuits |

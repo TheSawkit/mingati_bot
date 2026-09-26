@@ -23,7 +23,8 @@ src/mingati/
 │   └── gaming.py      /jouer, boutons des cartes, expiration
 ├── services/
 │   ├── voice_rooms.py     VoiceRoomService (cycle de vie, contrôles) + VoiceRoomStore (SQLite)
-│   └── gaming_sessions.py GamingSessionService + validation /jouer (fonctions pures)
+│   ├── gaming_sessions.py GamingSessionService + validation /jouer (fonctions pures)
+│   └── session_voice.py   règles « Créer le vocal » d'une session (inscrits seulement, réutilisation)
 ├── interactions.py    erreurs communes slash/boutons/modals, MingatiView, MingatiModal
 ├── providers/         APIs externes : jeux gratuits, IA, serveurs (phase 4+)
 ├── views/
@@ -67,7 +68,7 @@ SIGTERM (`docker stop`) ou SIGINT ferment le bot puis la base proprement.
 
 - Une seule connexion `aiosqlite`, protégée par un `asyncio.Lock` : deux coroutines ne peuvent pas entrelacer leurs requêtes dans une même transaction.
 - `Database.transaction()` pour plusieurs écritures atomiques (`BEGIN IMMEDIATE` / `COMMIT` / `ROLLBACK`).
-- Pragmas : `foreign_keys = ON`, `journal_mode = WAL`, `busy_timeout = 5000`.
+- Pragmas : `foreign_keys = ON`, `journal_mode = WAL`, `synchronous = NORMAL` (sûr en WAL, moins d'écritures sur la carte SD — [doc SQLite](https://sqlite.org/pragma.html#pragma_synchronous)), `busy_timeout = 5000`.
 - Migrations : fichiers `src/mingati/migrations/NNNN_nom.sql`, numérotés sans trou. La version appliquée est stockée dans `PRAGMA user_version`. Chaque migration tourne dans sa propre transaction : un échec laisse la base à la version précédente.
 - Chaque feature ajoute ses tables dans sa propre migration, au moment où elle en a besoin.
 
@@ -146,6 +147,7 @@ Création, suppression et transferts passent par un unique `asyncio.Lock` du ser
 Bouton → session retrouvée par message_id → join/leave en transaction → carte éditée
 Tâche 1 min → sessions expirées supprimées → cartes supprimées
 RAW_MEMBER_REMOVE (si intent Members) → retrait partout → cartes éditées/supprimées
+GUILD_CHANNEL_DELETE → vocal détaché des sessions → cartes rafraîchies (plus de lien mort)
 ```
 
 ### Vocal de session

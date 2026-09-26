@@ -1,5 +1,31 @@
 # Architecture
 
+Comment Mingati Bot est construit, et pourquoi. Pour ajouter une fonctionnalité pas à pas, voir [CONTRIBUTING.md](CONTRIBUTING.md) ; pour l'héberger, [docs/INSTALLATION.md](docs/INSTALLATION.md).
+
+## Vue d'ensemble
+
+```text
+                         Discord (gateway + API)
+                                  │
+                ┌─────────────────┴─────────────────┐
+                │ bot.py : démarrage, intents, sync │
+                └─────────────────┬─────────────────┘
+          ┌───────────────────────┼────────────────────────┐
+          ▼                       ▼                        ▼
+   cogs/ (commandes,       views/ (embeds,          tâches de fond
+   événements)             boutons, modals)         (expiration, refresh,
+          │                       │                  nettoyage)
+          └───────────┬───────────┘                        │
+                      ▼                                    │
+            services/ (règles métier) ◄────────────────────┘
+               │                 │
+               ▼                 ▼
+        database.py         providers/ ──► Epic, Steam, GOG, Groq/Gemini,
+        (SQLite, WAL)        (HTTP 20 s)    blagues-api.fr, Minecraft
+```
+
+Un processus unique, une base SQLite locale (`data/mingati.db`), aucun service externe obligatoire : sans clés d'API, les fonctions qui en dépendent se désactivent proprement et le reste fonctionne.
+
 ## Principes
 
 - **Petit et fiable** : un seul process, une base SQLite, zéro service externe obligatoire.

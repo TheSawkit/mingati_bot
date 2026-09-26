@@ -25,10 +25,13 @@ src/mingati/
 │   ├── voice_rooms.py     VoiceRoomService (cycle de vie, contrôles) + VoiceRoomStore (SQLite)
 │   ├── gaming_sessions.py GamingSessionService + validation /jouer (fonctions pures)
 │   ├── session_voice.py   règles « Créer le vocal » d'une session (inscrits seulement, réutilisation)
-│   └── free_games.py      pipeline jeux gratuits (validation, déduplication, publication)
+│   ├── free_games.py      pipeline jeux gratuits (validation, déduplication, publication)
+│   └── billy.py           personnalité, limites d'usage, secours pour chaque réponse
 ├── providers/
 │   ├── http.py            client aiohttp partagé : timeout, retries
-│   └── games/             EpicProvider, SteamProvider, GogProvider → FreeGame
+│   ├── games/             EpicProvider, SteamProvider, GogProvider → FreeGame
+│   ├── ai/                AIProvider + OpenAICompatibleProvider (Gemini, Groq…)
+│   └── jokes.py           blagues-api.fr
 ├── interactions.py    erreurs communes slash/boutons/modals, MingatiView, MingatiModal
 ├── views/
 │   ├── voice.py       panneau persistant, modals, sélecteurs
@@ -188,6 +191,20 @@ refresh (toutes les 2 h ou /freegames refresh)
 - `free_games` : offre normalisée, `offer_key` unique, `published_at`, `message_id`.
 - `game_sources` : dernière réussite, nombre de jeux, dernière erreur par source.
 
+## Billy
+
+```text
+/billy ou @Billy
+ ├─ prepare_question : nettoyage, longueur ≤ 500, IA configurée, UsageLimiter (20 s / membre, 300 / jour)
+ │    refus → message éphémère, avant toute réponse publique
+ └─ answer : persona système + question → AIProvider.complete (≤ 200 tokens)
+      erreur réseau/API → phrase de secours « dans le personnage »
+```
+
+- `AIProvider` est un Protocol ; `OpenAICompatibleProvider` couvre tous les fournisseurs au format OpenAI *chat completions*. `create_ai_provider` choisit l'URL et la clé selon `LLM_PROVIDER`, le modèle vient toujours de `LLM_MODEL`.
+- Pas de mémoire : chaque question est indépendante (coût et vie privée).
+- Intents calculés depuis la config (`build_intents(settings)`) : `guild_messages` seulement si les mentions sont activées, `members` seulement si la bienvenue l'est. Les listeners correspondants ne sont enregistrés que dans ce cas.
+
 ## Flux des features à venir
 
-- Billy — phase 5
+Hub `/mingati` (phase 6), game night et commandes fun (phase 7), serveurs de jeux (phase 8).

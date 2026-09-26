@@ -2,7 +2,7 @@
 
 Bot Discord privé du serveur **Mingati !** (~20 potes). Petit, fiable, pensé pour tourner 24/7 sur un Raspberry Pi.
 
-> **V2 en cours de reconstruction.** Phases 1 à 4 terminées : fondations, vocaux temporaires, qui joue ?, jeux gratuits. Les fonctionnalités arrivent phase par phase — voir [Roadmap](#roadmap).
+> **V2 en cours de reconstruction.** Phases 1 à 5 terminées : fondations, vocaux temporaires, qui joue ?, jeux gratuits, Billy. Les fonctionnalités arrivent phase par phase — voir [Roadmap](#roadmap).
 
 ## Sommaire
 
@@ -25,6 +25,8 @@ Bot Discord privé du serveur **Mingati !** (~20 potes). Petit, fiable, pensé p
 | `/vocal rename` `lock` `unlock` `invite` `limit` `transfer` `close` | Propriétaire du vocal | Contrôle de son vocal temporaire |
 | `/jouer` | Tout le monde | Publie une carte « qui joue ? » dans 🎯・qui-joue |
 | `/freegames refresh` `status` | Staff | Vérification manuelle et état des sources de jeux gratuits |
+| `/billy question` | Tout le monde | Pose une question à Billy (IA) |
+| `/blague` | Tout le monde | Une blague, chute cachée en spoiler |
 
 ### Vocaux temporaires
 
@@ -57,7 +59,7 @@ Bot Discord privé du serveur **Mingati !** (~20 potes). Petit, fiable, pensé p
 - `heure` accepte `21h`, `21h30`, `21:30` ou `maintenant`, dans le fuseau `TIMEZONE`. Une heure déjà passée vise le lendemain. L'heure s'affiche ensuite dans le fuseau de chaque lecteur.
 - La carte disparaît quand la session expire (début + `duree` heures, 3 h par défaut) ou quand le dernier joueur quitte.
 - **Créer le vocal** : ouvre un vocal temporaire « 🎮 Jeu » dans la catégorie gaming, ouvert à tous les inscrits, limité au nombre de joueurs, et les mentionne. Si tu as déjà un vocal, il est réutilisé et ouvert aux inscrits.
-- Si un membre quitte le serveur, il est retiré des sessions — **uniquement si l'intent Server Members est activé** (prévu avec la phase 5). Sans lui, sa carte reste jusqu'à expiration.
+- Si un membre quitte le serveur, il est retiré des sessions — **uniquement avec `WELCOME_ENABLED=true`**, qui active l'intent Server Members. Sans lui, sa carte reste jusqu'à expiration.
 
 ### Jeux gratuits
 
@@ -74,6 +76,28 @@ Toutes les 2 heures, le bot vérifie Epic Games, Steam et GOG et annonce chaque 
 - Une source en panne n'empêche pas les autres ; `/freegames status` montre la dernière réussite et la dernière erreur de chacune.
 
 Toutes les commandes sont des **slash commands** synchronisées sur le serveur Mingati au démarrage. Il n'y a plus de commandes `!prefix`.
+
+### Billy
+
+Billy est le personnage IA de Mingati : anxieux, maladroit, sympa, réponses courtes. Il ne lit **pas** tous les messages.
+
+- `/billy question` : réponse courte (≈ 200 tokens max, 1 500 caractères max).
+- `@Billy …` : optionnel, `BILLY_MENTIONS_ENABLED=true`. N'utilise que l'intent non privilégié *Guild Messages* : Discord livre le contenu des messages qui mentionnent le bot même sans *Message Content* ([doc](https://github.com/discord/discord-api-docs/blob/main/developers/events/gateway.mdx)).
+- Limites : 1 question toutes les 20 s par membre, 300 appels IA par jour pour tout le serveur. Pas de mémoire entre les questions.
+- Si l'IA ne répond pas, Billy répond une phrase de secours au lieu de planter.
+- `/blague` : [blagues-api.fr](https://www.blagues-api.fr) (sans les catégories *dark* et *limit*), sinon l'IA, sinon une petite liste intégrée.
+- Bienvenue : optionnel, `WELCOME_ENABLED=true`, message généré par l'IA (ou une phrase de la V1 en secours) dans `CHANNEL_CHAT_ID`. **Demande l'intent privilégié Server Members**, à activer dans le Developer Portal.
+
+#### Choisir le modèle
+
+Un seul provider générique parle le format OpenAI *chat completions* : changer de fournisseur = changer 3 variables.
+
+| `LLM_PROVIDER` | Clé | `LLM_MODEL` (exemple) | Offre gratuite |
+|---|---|---|---|
+| `gemini` | `GEMINI_API_KEY` ([AI Studio](https://aistudio.google.com/apikey)) | `gemini-3.8-flash` | Quotas visibles dans AI Studio ([doc](https://ai.google.dev/gemini-api/docs/rate-limits)) |
+| `groq` | `GROQ_API_KEY` ([console](https://console.groq.com/keys)) | `openai/gpt-oss-120b` | 30 req/min, 1 000 req/jour ([doc](https://console.groq.com/docs/rate-limits)) |
+
+Sans clé ou sans `LLM_MODEL`, `/billy` répond que l'IA n'est pas configurée ; `/blague` et la bienvenue marchent quand même.
 
 ## Stack
 
@@ -124,8 +148,9 @@ Sans `Manage Roles`, les vocaux sont quand même créés et supprimés ; seuls v
 |---|---|---|
 | Guilds | Oui | Toujours |
 | Voice States | Oui | Vocaux temporaires (non privilégié) |
-| Message Content | Non | Uniquement si le mode `@Billy` est activé (phase 5) |
-| Server Members | Non | Prévu en phase 5 (message de bienvenue, retrait des sessions quand un membre part) |
+| Guild Messages | Si `BILLY_MENTIONS_ENABLED=true` | Recevoir les messages qui mentionnent Billy (non privilégié) |
+| Message Content | Non | Jamais nécessaire, même pour `@Billy` |
+| Server Members | Si `WELCOME_ENABLED=true` | Message de bienvenue et retrait des sessions quand un membre part. **Privilégié** : à activer dans le portail |
 | Presence | Non | Uniquement si la feature présence est activée (phase 9) |
 
 ## Configuration
@@ -151,6 +176,10 @@ Puis remplir `.env`. Le fichier n'est **jamais** commité.
 | `LLM_PROVIDER` | Non | Fournisseur IA (`gemini`) |
 | `LLM_MODEL` | Non | Modèle IA, jamais codé en dur |
 | `GEMINI_API_KEY` | Non | Clé API Gemini |
+| `GROQ_API_KEY` | Non | Clé Groq si `LLM_PROVIDER=groq` |
+| `BLAGUES_API_TOKEN` | Non | Token [blagues-api.fr](https://www.blagues-api.fr) pour `/blague` |
+| `BILLY_MENTIONS_ENABLED` | Non | `true` pour que Billy réponde aux mentions, défaut `false` |
+| `WELCOME_ENABLED` | Non | `true` pour le message de bienvenue, défaut `false` (intent privilégié) |
 | `DATABASE_PATH` | Non | Chemin SQLite, défaut `data/mingati.db` |
 | `LOG_LEVEL` | Non | `DEBUG`, `INFO` (défaut), `WARNING`, `ERROR` |
 | `TIMEZONE` | Non | Fuseau des heures tapées dans `/jouer`, défaut `Europe/Brussels` |
@@ -198,7 +227,7 @@ Image construite pour ARM64 en CI ; cible : Raspberry Pi OS 64 bits (Pi 4 / Pi 5
 
 ### Remplacer l'ancien bot (V1)
 
-**Pas avant la phase 5.** La V2 n'a pas encore Billy ni le message de bienvenue (phase 5). La commande « @bot dis … » de la V1 est abandonnée volontairement.
+La V2 couvre désormais tout ce que faisait la V1, sauf la commande « @bot dis … », abandonnée volontairement (le bot supprimait ton message pour le reposter à sa place). Pour retrouver le comportement V1, mettre `BILLY_MENTIONS_ENABLED=true` et `WELCOME_ENABLED=true` (activer *Server Members* dans le portail).
 
 Le jour de la bascule, sur le Pi :
 
@@ -245,7 +274,7 @@ La CI GitHub Actions lance ces trois étapes puis construit l'image Docker pour 
 | 2 | Vocaux temporaires | Terminé |
 | 3 | Qui joue ? (`/jouer`) | Terminé |
 | 4 | Jeux gratuits Steam / Epic / GOG | Terminé |
-| 5 | Billy (IA) + `/blague` | À faire |
+| 5 | Billy (IA) + `/blague` + bienvenue | Terminé |
 | 6 | Hub `/mingati` | À faire |
 | 7 | Game night + commandes fun | À faire |
 | 8 | Serveurs de jeux (Minecraft) | À faire |

@@ -23,8 +23,6 @@ class DatabaseError(RuntimeError):
 
 def discover_migrations(directory: Traversable) -> list[tuple[int, str]]:
     """Return (version, sql) pairs sorted by version; versions must be contiguous from 1."""
-    if not directory.is_dir():
-        return []
     migrations: list[tuple[int, str]] = []
     for entry in directory.iterdir():
         match = MIGRATION_NAME.match(entry.name)
@@ -49,8 +47,7 @@ class Database:
 
     async def connect(self) -> None:
         """Open the database, enable integrity pragmas and apply pending migrations."""
-        if self.path != Path(":memory:"):
-            self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.path.parent.mkdir(parents=True, exist_ok=True)
         self._connection = await aiosqlite.connect(self.path, isolation_level=None)
         self._connection.row_factory = aiosqlite.Row
         await self._connection.execute("PRAGMA foreign_keys = ON")
@@ -95,8 +92,7 @@ class Database:
 
     async def fetch_all(self, sql: str, params: Params = ()) -> list[aiosqlite.Row]:
         async with self._lock:
-            cursor = await self.connection.execute(sql, params)
-            return list(await cursor.fetchall())
+            return list(await self.connection.execute_fetchall(sql, params))
 
     async def schema_version(self) -> int:
         row = await self.fetch_one("PRAGMA user_version")

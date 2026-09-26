@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from mingati.config import Settings
+from mingati.config import Settings, describe_config_error
 
 
 def test_loads_ids_from_environment(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -74,3 +74,19 @@ def test_timezone_is_read_from_environment(monkeypatch: pytest.MonkeyPatch) -> N
     settings = Settings(discord_token="t", discord_guild_id=1)
 
     assert settings.timezone.key == "Europe/Paris"
+
+
+def test_configuration_errors_never_echo_values(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    (tmp_path / ".env").write_text(
+        "DISCORD_GUILD_ID=pas-un-nombre\nGROQ_API_KEY=gsk_FAKEsecretFAKEsecretFAKEsecret\n"
+    )
+
+    with pytest.raises(ValidationError) as caught:
+        Settings()
+    report = describe_config_error(caught.value)
+
+    assert "FAKEsecret" not in report
+    assert "pas-un-nombre" not in report
+    assert "discord_token" in report and "discord_guild_id" in report

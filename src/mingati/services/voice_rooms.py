@@ -64,7 +64,7 @@ def humans(members: Iterable[discord.Member]) -> list[discord.Member]:
 def successor_candidates(
     members: Sequence[discord.Member], rng: random.Random | None = None
 ) -> list[discord.Member]:
-    """Remaining humans in random order, to hand over a room whose owner left (issue #1)."""
+    """Remaining humans in random order, to hand over a room whose owner left."""
     candidates = humans(members)
     (rng or random).shuffle(candidates)
     return candidates
@@ -251,10 +251,7 @@ class VoiceRoomService:
         guests: Sequence[discord.abc.Snowflake],
         user_limit: int,
     ) -> tuple[VoiceRoom, bool]:
-        """Room for a gaming session: reuse the owner's room or create one open to every player.
-
-        Returns the room and whether it was just created.
-        """
+        """Reuse the owner's room or create one open to every player; returns (room, created)."""
         async with self._lifecycle:
             existing = await self.store.get_by_owner(owner.guild.id, owner.id)
             channel = owner.guild.get_channel(existing.channel_id) if existing else None

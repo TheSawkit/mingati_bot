@@ -1,0 +1,14 @@
+services:
+  mingati-bot:
+    build: .
+    image: mingati-bot:latest
+    container_name: mingati-bot
+    env_file: .env
+    restart: unless-stopped
+    volumes:
+      - ./data:/app/data
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

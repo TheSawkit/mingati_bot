@@ -107,7 +107,7 @@ class Voice(commands.Cog):
         except discord.HTTPException:
             log.warning("Could not post control panel in room %s", room.channel_id, exc_info=True)
             return
-        await self.service.store.set_panel_message(room.channel_id, message.id)
+        await self.service.attach_panel(room.channel_id, message.id)
 
     async def refresh_panel(self, room: VoiceRoom) -> None:
         channel = self.bot.get_channel(room.channel_id)

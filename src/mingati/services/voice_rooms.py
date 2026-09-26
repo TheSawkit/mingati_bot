@@ -279,6 +279,9 @@ class VoiceRoomService:
                 removed += await self._prune(guild, room)
         return removed
 
+    async def attach_panel(self, channel_id: int, message_id: int) -> None:
+        await self.store.set_panel_message(channel_id, message_id)
+
     async def forget(self, channel_id: int) -> None:
         if await self.store.delete(channel_id):
             log.info("Temporary voice room %s was deleted outside the bot", channel_id)

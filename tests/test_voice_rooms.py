@@ -411,3 +411,11 @@ async def test_sweep_deletes_old_rooms_nobody_joined(service, guild, trigger) ->
     assert removed == 1
     assert guild.get_channel(unused.channel_id) is None
     assert not busy.deleted
+
+
+async def test_panel_message_is_remembered(service, guild, trigger) -> None:
+    _, _, channel = await open_room(service, guild, trigger)
+
+    await service.attach_panel(channel.id, 777)
+
+    assert (await service.store.get(channel.id)).panel_message_id == 777

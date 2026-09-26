@@ -98,6 +98,9 @@ class FakeGuild:
     def get_channel(self, channel_id: int) -> FakeVoiceChannel | None:
         return self.channels.get(channel_id)
 
+    def get_member(self, member_id: int) -> None:
+        return None
+
     def add_voice_channel(
         self, name: str, category: FakeCategory | None = None
     ) -> FakeVoiceChannel:

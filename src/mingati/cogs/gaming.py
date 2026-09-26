@@ -17,6 +17,7 @@ from mingati.services.gaming_sessions import (
     GamingSession,
     plan_session,
 )
+from mingati.services.session_voice import SessionVoice, open_session_voice
 from mingati.views.gaming import PLATFORMS, SessionView, build_session_embed
 
 log = logging.getLogger(__name__)
@@ -109,42 +110,37 @@ class Gaming(commands.Cog):
 
     async def open_voice(self, interaction: discord.Interaction) -> None:
         session = await self._session_of(interaction)
-        member = interaction.user
-        if not isinstance(member, discord.Member) or member.id not in session.member_ids:
-            raise UserFacingError("Rejoins la session avant de créer son vocal.")
-        existing = self.bot.get_channel(session.voice_channel_id or 0)
-        if isinstance(existing, discord.VoiceChannel):
-            await interaction.response.send_message(
-                f"🎙 Le vocal existe déjà : {existing.mention}", ephemeral=True
+        if not isinstance(interaction.user, discord.Member):
+            raise UserFacingError("Cette commande ne marche que sur le serveur.")
+        trigger = self.bot.get_channel(self.bot.settings.channel_create_voice_gaming_id or 0)
+        await interaction.response.defer(ephemeral=True, thinking=True)
+        result = await open_session_voice(
+            self.sessions,
+            self.bot.voice_rooms,
+            session,
+            interaction.user,
+            trigger if isinstance(trigger, discord.VoiceChannel) else None,
+        )
+        if result.already_open:
+            await interaction.followup.send(
+                f"🎙 Le vocal existe déjà : <#{result.channel_id}>", ephemeral=True
             )
             return
+        if result.created_room:
+            self.bot.dispatch("voice_room_created", result.created_room)
+        await self._edit_card(result.session)
+        await interaction.followup.send(f"🎙 Vocal prêt : <#{result.channel_id}>", ephemeral=True)
+        await self._announce_voice(result)
 
-        trigger = self.bot.get_channel(self.bot.settings.channel_create_voice_gaming_id or 0)
-        if not isinstance(trigger, discord.VoiceChannel):
-            raise UserFacingError("Aucun salon « Créer un vocal » gaming n'est configuré.")
-
-        await interaction.response.defer(ephemeral=True, thinking=True)
-        guests = [
-            member.guild.get_member(user_id) or discord.Object(user_id)
-            for user_id in session.member_ids
-            if user_id != member.id
-        ]
-        room, created = await self.bot.voice_rooms.open_session_room(
-            member, trigger, f"🎮 {session.game}", guests, session.max_players
+    async def _announce_voice(self, result: SessionVoice) -> None:
+        card = self._card(result.session)
+        if not result.guests or card is None:
+            return
+        mentions = " ".join(f"<@{guest.id}>" for guest in result.guests)
+        await card.reply(
+            f"🎙 Vocal prêt pour **{result.session.game}** : <#{result.channel_id}> {mentions}",
+            allowed_mentions=discord.AllowedMentions(users=True),
         )
-        if created:
-            self.bot.dispatch("voice_room_created", room)
-        await self.sessions.attach_voice_channel(session.id, room.channel_id)
-        updated = await self._session_of(interaction)
-        await self._edit_card(updated)
-        await interaction.followup.send(f"🎙 Vocal prêt : <#{room.channel_id}>", ephemeral=True)
-        card = self._card(updated)
-        if guests and card is not None:
-            await card.reply(
-                f"🎙 Vocal prêt pour **{session.game}** : <#{room.channel_id}> "
-                + " ".join(f"<@{guest.id}>" for guest in guests),
-                allowed_mentions=discord.AllowedMentions(users=True),
-            )
 
     @tasks.loop(minutes=1)
     async def expire_sessions(self) -> None:

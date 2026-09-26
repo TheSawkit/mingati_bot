@@ -19,13 +19,16 @@ src/mingati/
 ├── migrations/        NNNN_nom.sql, appliqués dans l'ordre
 ├── cogs/              commandes et événements Discord (fins)
 │   ├── core.py        /bot status
-│   └── voice.py       événements vocaux + /vocal
+│   ├── voice.py       événements vocaux + /vocal
+│   └── gaming.py      /jouer, boutons des cartes, expiration
 ├── services/
-│   └── voice_rooms.py VoiceRoomService (cycle de vie, contrôles) + VoiceRoomStore (SQLite)
+│   ├── voice_rooms.py     VoiceRoomService (cycle de vie, contrôles) + VoiceRoomStore (SQLite)
+│   └── gaming_sessions.py GamingSessionService + validation /jouer (fonctions pures)
 ├── interactions.py    erreurs communes slash/boutons/modals, MingatiView, MingatiModal
 ├── providers/         APIs externes : jeux gratuits, IA, serveurs (phase 4+)
 ├── views/
-│   └── voice.py       panneau persistant, modals, sélecteurs
+│   ├── voice.py       panneau persistant, modals, sélecteurs
+│   └── gaming.py      carte de session + boutons persistants
 └── utils/
     ├── logging.py     configuration des logs + mémoire de la dernière erreur
     └── permissions.py check staff
@@ -121,8 +124,35 @@ Création, suppression et transferts passent par un unique `asyncio.Lock` du ser
 
 `on_ready` appelle `VoiceRoomService.reconcile` : lignes sans salon supprimées, salons vides supprimés, propriétaires absents remplacés, membres présents dans un déclencheur servis. Seuls les salons présents en base sont touchés.
 
+## Services partagés
+
+`MingatiBot` instancie les services partagés (`voice_rooms`, `gaming_sessions`). Les cogs les utilisent sans se connaître : quand le cog gaming crée un vocal, il émet l'événement interne `voice_room_created`, et le cog vocal poste le panneau.
+
+## Qui joue ?
+
+### Tables
+
+- `gaming_sessions` : jeu, plateforme, mode, `max_players`, `starts_at` / `expires_at` (epoch UTC), salon et message de la carte, vocal lié.
+- `gaming_session_members` : clé primaire `(session_id, user_id)` → double inscription impossible ; `ON DELETE CASCADE`.
+- Index sur `expires_at` (balayage d'expiration), `(guild_id, host_id)` et `user_id` (départ du serveur).
+
+### Flux
+
+```text
+/jouer → plan_session (validation, parsing heure, fenêtre)   pur, testé
+       → service.create (session + hôte, 1 session active par hôte)
+       → carte postée → message_id enregistré (échec d'envoi → session supprimée)
+
+Bouton → session retrouvée par message_id → join/leave en transaction → carte éditée
+Tâche 1 min → sessions expirées supprimées → cartes supprimées
+RAW_MEMBER_REMOVE (si intent Members) → retrait partout → cartes éditées/supprimées
+```
+
+### Vocal de session
+
+`VoiceRoomService.open_session_room` réutilise le vocal du membre s'il en a un, sinon en crée un dans la catégorie du déclencheur gaming, ouvert nommément aux inscrits (`discord.Object(id)` suffit, pas besoin de l'intent Members). Une tâche toutes les 5 minutes supprime les vocaux vides créés depuis plus de 10 minutes : un vocal jamais rejoint ne reçoit aucun événement de départ.
+
 ## Flux des features à venir
 
-- Qui joue ? — phase 3
 - Jeux gratuits — phase 4
 - Billy — phase 5

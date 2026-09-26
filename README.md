@@ -2,7 +2,7 @@
 
 Bot Discord privé du serveur **Mingati !** (~20 potes). Petit, fiable, pensé pour tourner 24/7 sur un Raspberry Pi.
 
-> **V2 en cours de reconstruction.** Phases 1 (fondations) et 2 (vocaux temporaires) terminées. Les fonctionnalités arrivent phase par phase — voir [Roadmap](#roadmap).
+> **V2 en cours de reconstruction.** Phases 1 (fondations), 2 (vocaux temporaires) et 3 (qui joue ?) terminées. Les fonctionnalités arrivent phase par phase — voir [Roadmap](#roadmap).
 
 ## Sommaire
 
@@ -23,6 +23,7 @@ Bot Discord privé du serveur **Mingati !** (~20 potes). Petit, fiable, pensé p
 |---|---|---|
 | `/bot status` | Staff | Uptime, latence, version, état SQLite, dernière erreur |
 | `/vocal rename` `lock` `unlock` `invite` `limit` `transfer` `close` | Propriétaire du vocal | Contrôle de son vocal temporaire |
+| `/jouer` | Tout le monde | Publie une carte « qui joue ? » dans 🎯・qui-joue |
 
 ### Vocaux temporaires
 
@@ -33,6 +34,29 @@ Bot Discord privé du serveur **Mingati !** (~20 potes). Petit, fiable, pensé p
 - Un membre ne possède qu'un vocal à la fois : revenir dans le salon déclencheur le renvoie dans le sien.
 - Au démarrage, le bot répare l'état : salons disparus oubliés, salons vides supprimés, propriétaires absents remplacés, membres en attente dans un déclencheur servis.
 - Le bot ne supprime **jamais** un salon qu'il n'a pas créé (suivi par ID en base, pas par nom).
+- Un vocal créé mais que personne ne rejoint est supprimé après 10 minutes.
+
+### Qui joue ?
+
+`/jouer jeu plateforme joueurs [mode] [heure] [duree]` publie une carte dans le salon qui-joue (ou dans le salon courant si `CHANNEL_WHO_PLAYS_ID` est vide) :
+
+```text
+🎮 Cyberpunk 2077
+🖥️ PC
+🎯 Coop
+🕘 21:00 (dans 1 heure)
+👥 2 / 4
+@Alice 👑
+@Bob
+[ Je rejoins ] [ Je quitte ] [ 🎙 Créer le vocal ]
+```
+
+- L'organisateur est inscrit d'office ; une seule session en cours par organisateur.
+- Pas de double inscription, pas de dépassement du nombre de joueurs (vérifié dans une transaction).
+- `heure` accepte `21h`, `21h30`, `21:30` ou `maintenant`, dans le fuseau `TIMEZONE`. Une heure déjà passée vise le lendemain. L'heure s'affiche ensuite dans le fuseau de chaque lecteur.
+- La carte disparaît quand la session expire (début + `duree` heures, 3 h par défaut) ou quand le dernier joueur quitte.
+- **Créer le vocal** : ouvre un vocal temporaire « 🎮 Jeu » dans la catégorie gaming, ouvert à tous les inscrits, limité au nombre de joueurs, et les mentionne. Si tu as déjà un vocal, il est réutilisé et ouvert aux inscrits.
+- Si un membre quitte le serveur, il est retiré des sessions — **uniquement si l'intent Server Members est activé** (prévu avec la phase 5). Sans lui, sa carte reste jusqu'à expiration.
 
 Toutes les commandes sont des **slash commands** synchronisées sur le serveur Mingati au démarrage. Il n'y a plus de commandes `!prefix`.
 
@@ -114,6 +138,7 @@ Puis remplir `.env`. Le fichier n'est **jamais** commité.
 | `GEMINI_API_KEY` | Non | Clé API Gemini |
 | `DATABASE_PATH` | Non | Chemin SQLite, défaut `data/mingati.db` |
 | `LOG_LEVEL` | Non | `DEBUG`, `INFO` (défaut), `WARNING`, `ERROR` |
+| `TIMEZONE` | Non | Fuseau des heures tapées dans `/jouer`, défaut `Europe/Brussels` |
 
 Une variable vide est traitée comme non définie. Pour récupérer un ID Discord : *Paramètres → Avancés → Mode développeur*, puis clic droit → *Copier l'identifiant*.
 
@@ -189,7 +214,7 @@ La CI GitHub Actions lance ces trois étapes puis construit l'image Docker pour 
 |---|---|---|
 | 1 | Fondations : config, logging, SQLite + migrations, Docker, CI, `/bot status` | Terminé |
 | 2 | Vocaux temporaires | Terminé |
-| 3 | Qui joue ? (`/jouer`) | À faire |
+| 3 | Qui joue ? (`/jouer`) | Terminé |
 | 4 | Jeux gratuits Steam / Epic / GOG | À faire |
 | 5 | Billy (IA) + `/blague` | À faire |
 | 6 | Hub `/mingati` | À faire |

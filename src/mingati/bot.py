@@ -9,8 +9,11 @@ from discord.ext import commands
 from mingati.config import Settings
 from mingati.database import Database
 from mingati.interactions import report_error
+from mingati.providers.ai import create_ai_provider
 from mingati.providers.games import default_game_providers
 from mingati.providers.http import create_http_session
+from mingati.providers.jokes import create_joke_provider
+from mingati.services.billy import BillyService
 from mingati.services.free_games import FreeGameService
 from mingati.services.gaming_sessions import GamingSessionService
 from mingati.services.voice_rooms import VoiceRoomService, VoiceRoomStore
@@ -23,12 +26,18 @@ EXTENSIONS = (
     "mingati.cogs.voice",
     "mingati.cogs.gaming",
     "mingati.cogs.free_games",
+    "mingati.cogs.billy",
 )
 
 
-def build_intents() -> discord.Intents:
-    """Least-privilege gateway intents; features opt in to extra intents explicitly."""
-    return discord.Intents(guilds=True, voice_states=True)
+def build_intents(settings: Settings) -> discord.Intents:
+    """Least-privilege gateway intents; optional features opt in explicitly."""
+    return discord.Intents(
+        guilds=True,
+        voice_states=True,
+        guild_messages=settings.billy_mentions_enabled,
+        members=settings.welcome_enabled,
+    )
 
 
 class MingatiTree(app_commands.CommandTree):
@@ -47,7 +56,7 @@ class MingatiBot(commands.Bot):
     ) -> None:
         super().__init__(
             command_prefix=commands.when_mentioned,
-            intents=build_intents(),
+            intents=build_intents(settings),
             help_command=None,
             tree_cls=MingatiTree,
             allowed_mentions=discord.AllowedMentions(everyone=False, roles=False),
@@ -58,6 +67,7 @@ class MingatiBot(commands.Bot):
         self.voice_rooms = VoiceRoomService(VoiceRoomStore(database), settings.voice_trigger_ids)
         self.gaming_sessions = GamingSessionService(database)
         self.free_games = FreeGameService(database, default_game_providers(settings.store_country))
+        self.billy = BillyService(create_ai_provider(settings), create_joke_provider(settings))
         self.http_session: aiohttp.ClientSession | None = None
         self.started_at = datetime.now(UTC)
 

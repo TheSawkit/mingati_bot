@@ -13,12 +13,25 @@ from mingati.utils.logging import LastErrorHandler
 from mingati.utils.permissions import has_any_role
 
 
-def test_intents_are_least_privilege() -> None:
-    intents = build_intents()
+def test_intents_are_least_privilege_by_default() -> None:
+    intents = build_intents(Settings(discord_token="t", discord_guild_id=1))
 
-    assert intents.guilds
+    assert intents.guilds and intents.voice_states
+    assert not intents.guild_messages
     assert not intents.message_content
     assert not intents.members
+    assert not intents.presences
+
+
+def test_optional_features_opt_in_to_their_intent_only() -> None:
+    settings = Settings(
+        discord_token="t", discord_guild_id=1, billy_mentions_enabled=True, welcome_enabled=True
+    )
+
+    intents = build_intents(settings)
+
+    assert intents.guild_messages and intents.members
+    assert not intents.message_content
     assert not intents.presences
 
 
@@ -66,6 +79,8 @@ async def test_cogs_register_expected_commands_and_persistent_views(tmp_path: Pa
             "vocal": ["close", "invite", "limit", "lock", "rename", "transfer", "unlock"],
             "jouer": [],
             "freegames": ["refresh", "status"],
+            "billy": [],
+            "blague": [],
         }
         assert len(bot.persistent_views) == 2
         assert all(view.is_persistent() for view in bot.persistent_views)

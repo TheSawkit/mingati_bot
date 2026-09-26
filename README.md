@@ -2,7 +2,7 @@
 
 Bot Discord privé du serveur **Mingati !** (~20 potes). Petit, fiable, pensé pour tourner 24/7 sur un Raspberry Pi.
 
-> **V2 en cours de reconstruction.** Phases 1 à 5 terminées : fondations, vocaux temporaires, qui joue ?, jeux gratuits, Billy. Les fonctionnalités arrivent phase par phase — voir [Roadmap](#roadmap).
+> **V2 en cours de reconstruction.** Phases 1 à 6 terminées : fondations, vocaux temporaires, qui joue ?, jeux gratuits, Billy, hub. Les fonctionnalités arrivent phase par phase — voir [Roadmap](#roadmap).
 
 ## Sommaire
 
@@ -25,6 +25,7 @@ Bot Discord privé du serveur **Mingati !** (~20 potes). Petit, fiable, pensé p
 | `/vocal rename` `lock` `unlock` `invite` `limit` `transfer` `close` | Propriétaire du vocal | Contrôle de son vocal temporaire |
 | `/jouer` | Tout le monde | Publie une carte « qui joue ? » dans 🎯・qui-joue |
 | `/freegames refresh` `status` | Staff | Vérification manuelle et état des sources de jeux gratuits |
+| `/mingati` | Staff | Publie le hub dans le salon courant, ou le met à jour |
 | `/billy question` | Tout le monde | Pose une question à Billy (IA) |
 | `/blague` | Tout le monde | Une blague, chute cachée en spoiler |
 
@@ -76,6 +77,10 @@ Toutes les 2 heures, le bot vérifie Epic Games, Steam et GOG et annonce chaque 
 - Une source en panne n'empêche pas les autres ; `/freegames status` montre la dernière réussite et la dernière erreur de chacune.
 
 Toutes les commandes sont des **slash commands** synchronisées sur le serveur Mingati au démarrage. Il n'y a plus de commandes `!prefix`.
+
+### Hub
+
+`/mingati` publie un panneau permanent « Qu'est-ce qu'on fait ? » dans le salon où la commande est lancée. Relancée au même endroit, elle le met à jour ; ailleurs, elle le déplace. Boutons : 🎮 Qui joue ?, 🔊 Créer un vocal, 🎁 Jeux gratuits, 🤖 Billy. Les réponses sont privées : le salon reste propre.
 
 ### Billy
 
@@ -275,7 +280,7 @@ La CI GitHub Actions lance ces trois étapes puis construit l'image Docker pour 
 | 3 | Qui joue ? (`/jouer`) | Terminé |
 | 4 | Jeux gratuits Steam / Epic / GOG | Terminé |
 | 5 | Billy (IA) + `/blague` + bienvenue | Terminé |
-| 6 | Hub `/mingati` | À faire |
+| 6 | Hub `/mingati` | Terminé |
 | 7 | Game night + commandes fun | À faire |
 | 8 | Serveurs de jeux (Minecraft) | À faire |
 | 9 | Optionnel (présence…) | À valider |

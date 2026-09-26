@@ -26,7 +26,8 @@ src/mingati/
 │   ├── gaming_sessions.py GamingSessionService + validation /jouer (fonctions pures)
 │   ├── session_voice.py   règles « Créer le vocal » d'une session (inscrits seulement, réutilisation)
 │   ├── free_games.py      pipeline jeux gratuits (validation, déduplication, publication)
-│   └── billy.py           personnalité, limites d'usage, secours pour chaque réponse
+│   ├── billy.py           personnalité, limites d'usage, secours pour chaque réponse
+│   └── guild_config.py    état clé/valeur par serveur (position du hub)
 ├── providers/
 │   ├── http.py            client aiohttp partagé : timeout, retries
 │   ├── games/             EpicProvider, SteamProvider, GogProvider → FreeGame
@@ -205,6 +206,10 @@ refresh (toutes les 2 h ou /freegames refresh)
 - Pas de mémoire : chaque question est indépendante (coût et vie privée).
 - Intents calculés depuis la config (`build_intents(settings)`) : `guild_messages` seulement si les mentions sont activées, `members` seulement si la bienvenue l'est. Les listeners correspondants ne sont enregistrés que dans ce cas.
 
+## Hub
+
+`/mingati` (staff) publie un embed + `HubView` persistante (`mingati:hub:*`). La position du message est stockée dans `guild_config` (`hub_channel_id`, `hub_message_id`) : relancer la commande édite le message existant au lieu d'en créer un. Les boutons ne font que lire les services existants (`gaming_sessions.list_open`, `free_games.active`, `billy`) et répondent en éphémère.
+
 ## Flux des features à venir
 
-Hub `/mingati` (phase 6), game night et commandes fun (phase 7), serveurs de jeux (phase 8).
+Game night et commandes fun (phase 7), serveurs de jeux (phase 8).

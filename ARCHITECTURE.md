@@ -24,7 +24,11 @@ src/mingati/
 ├── services/
 │   ├── voice_rooms.py     VoiceRoomService (cycle de vie, contrôles) + VoiceRoomStore (SQLite)
 │   ├── gaming_sessions.py GamingSessionService + validation /jouer (fonctions pures)
-│   └── session_voice.py   règles « Créer le vocal » d'une session (inscrits seulement, réutilisation)
+│   ├── session_voice.py   règles « Créer le vocal » d'une session (inscrits seulement, réutilisation)
+│   └── free_games.py      pipeline jeux gratuits (validation, déduplication, publication)
+├── providers/
+│   ├── http.py            client aiohttp partagé : timeout, retries
+│   └── games/             EpicProvider, SteamProvider, GogProvider → FreeGame
 ├── interactions.py    erreurs communes slash/boutons/modals, MingatiView, MingatiModal
 ├── views/
 │   ├── voice.py       panneau persistant, modals, sélecteurs
@@ -152,9 +156,38 @@ GUILD_CHANNEL_DELETE → vocal détaché des sessions → cartes rafraîchies (p
 
 `VoiceRoomService.open_session_room` réutilise le vocal du membre s'il en a un, sinon en crée un dans la catégorie du déclencheur gaming, ouvert nommément aux inscrits (`discord.Object(id)` suffit, pas besoin de l'intent Members). Une tâche toutes les 5 minutes supprime les vocaux vides créés depuis plus de 10 minutes : un vocal jamais rejoint ne reçoit aucun événement de départ.
 
+## Jeux gratuits
+
+### Providers
+
+Chaque provider (`GameProvider` : `name`, `label`, `fetch(http)`) appelle une source JSON et renvoie des `FreeGame` normalisés. Le parsing est une fonction pure testée sur de vraies réponses figées dans `tests/data/`.
+
+| Provider | Source | Règle |
+|---|---|---|
+| Epic | `freeGamesPromotions` | promotion en cours à `discountPercentage == 0` et prix remisé nul |
+| Steam | recherche `json=1&maxprice=free&specials=1&category1=998` puis `api/appdetails` | `type == game` et `discount_percent == 100` |
+| GOG | `catalog.gog.com/v1/catalog?price=between:0,0&discounted=eq:true` | prix final 0 et prix de base > 0 |
+
+`providers/http.fetch_json` : timeout total 20 s, 3 tentatives sur erreur réseau ou 5xx, échec immédiat sur 4xx. Un payload inattendu lève `ProviderError`.
+
+### Pipeline
+
+```text
+refresh (toutes les 2 h ou /freegames refresh)
+ ├─ providers en parallèle (gather) ; une erreur = statut de la source, pas d'arrêt
+ ├─ validation (titre, https, pas déjà terminé)
+ ├─ INSERT OR IGNORE sur offer_key = source:id:fin   → déduplication
+ │    première réussite d'une source : insérées comme déjà publiées (silencieux)
+ │    offres sans date de fin disparues de la source : supprimées (ré-annonçables)
+ ├─ publication des offres non publiées ; échec d'envoi = retenté au passage suivant
+ └─ purge des offres terminées depuis plus de 30 jours
+```
+
+### Tables
+
+- `free_games` : offre normalisée, `offer_key` unique, `published_at`, `message_id`.
+- `game_sources` : dernière réussite, nombre de jeux, dernière erreur par source.
+
 ## Flux des features à venir
 
-Un dossier `providers/` (APIs externes via aiohttp, avec timeout) sera créé en phase 4, entre `services/` et Internet.
-
-- Jeux gratuits — phase 4
 - Billy — phase 5

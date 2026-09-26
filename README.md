@@ -2,7 +2,7 @@
 
 Bot Discord privé du serveur **Mingati !** (~20 potes). Petit, fiable, pensé pour tourner 24/7 sur un Raspberry Pi.
 
-> **V2 en cours de reconstruction.** Phases 1 (fondations), 2 (vocaux temporaires) et 3 (qui joue ?) terminées. Les fonctionnalités arrivent phase par phase — voir [Roadmap](#roadmap).
+> **V2 en cours de reconstruction.** Phases 1 à 4 terminées : fondations, vocaux temporaires, qui joue ?, jeux gratuits. Les fonctionnalités arrivent phase par phase — voir [Roadmap](#roadmap).
 
 ## Sommaire
 
@@ -24,6 +24,7 @@ Bot Discord privé du serveur **Mingati !** (~20 potes). Petit, fiable, pensé p
 | `/bot status` | Staff | Uptime, latence, version, état SQLite, dernière erreur |
 | `/vocal rename` `lock` `unlock` `invite` `limit` `transfer` `close` | Propriétaire du vocal | Contrôle de son vocal temporaire |
 | `/jouer` | Tout le monde | Publie une carte « qui joue ? » dans 🎯・qui-joue |
+| `/freegames refresh` `status` | Staff | Vérification manuelle et état des sources de jeux gratuits |
 
 ### Vocaux temporaires
 
@@ -58,6 +59,20 @@ Bot Discord privé du serveur **Mingati !** (~20 potes). Petit, fiable, pensé p
 - **Créer le vocal** : ouvre un vocal temporaire « 🎮 Jeu » dans la catégorie gaming, ouvert à tous les inscrits, limité au nombre de joueurs, et les mentionne. Si tu as déjà un vocal, il est réutilisé et ouvert aux inscrits.
 - Si un membre quitte le serveur, il est retiré des sessions — **uniquement si l'intent Server Members est activé** (prévu avec la phase 5). Sans lui, sa carte reste jusqu'à expiration.
 
+### Jeux gratuits
+
+Toutes les 2 heures, le bot vérifie Epic Games, Steam et GOG et annonce chaque nouveau jeu gratuit dans `CHANNEL_FREE_GAMES_ID` (titre, lien, image, date de fin quand la boutique la donne).
+
+| Source | Ce qui compte comme « gratuit » |
+|---|---|
+| Epic Games | Jeu de la semaine (promotion à 100 % en cours) |
+| Steam | Jeu complet (pas un DLC) remisé à 100 % |
+| GOG | Jeu payant remisé à 0 € |
+
+- Chaque offre n'est annoncée qu'une fois. Un jeu offert de nouveau plus tard est ré-annoncé.
+- Au tout premier passage d'une source, les jeux déjà gratuits sont enregistrés **sans annonce** : pas de spam au déploiement ni de doublon avec ce que la V1 a déjà posté.
+- Une source en panne n'empêche pas les autres ; `/freegames status` montre la dernière réussite et la dernière erreur de chacune.
+
 Toutes les commandes sont des **slash commands** synchronisées sur le serveur Mingati au démarrage. Il n'y a plus de commandes `!prefix`.
 
 ## Stack
@@ -66,7 +81,7 @@ Toutes les commandes sont des **slash commands** synchronisées sur le serveur M
 |---|---|
 | Langage | Python 3.12 |
 | Discord | discord.py 2.7 |
-| HTTP | aiohttp (APIs externes à partir de la phase 4) |
+| HTTP | aiohttp (timeout 20 s, retries sur erreurs réseau et 5xx) |
 | Stockage | SQLite via aiosqlite, migrations versionnées |
 | Configuration | pydantic-settings (variables d'environnement / `.env`) |
 | Outillage | uv, Ruff, pytest, pytest-asyncio |
@@ -139,6 +154,7 @@ Puis remplir `.env`. Le fichier n'est **jamais** commité.
 | `DATABASE_PATH` | Non | Chemin SQLite, défaut `data/mingati.db` |
 | `LOG_LEVEL` | Non | `DEBUG`, `INFO` (défaut), `WARNING`, `ERROR` |
 | `TIMEZONE` | Non | Fuseau des heures tapées dans `/jouer`, défaut `Europe/Brussels` |
+| `STORE_COUNTRY` | Non | Pays utilisé pour interroger les boutiques, défaut `BE` |
 
 Une variable vide est traitée comme non définie. Pour récupérer un ID Discord : *Paramètres → Avancés → Mode développeur*, puis clic droit → *Copier l'identifiant*.
 
@@ -182,7 +198,7 @@ Image construite pour ARM64 en CI ; cible : Raspberry Pi OS 64 bits (Pi 4 / Pi 5
 
 ### Remplacer l'ancien bot (V1)
 
-**Pas avant la phase 5.** La V2 n'a pas encore les jeux gratuits (phase 4), Billy ni le message de bienvenue (phase 5). La commande « @bot dis … » de la V1 est abandonnée volontairement.
+**Pas avant la phase 5.** La V2 n'a pas encore Billy ni le message de bienvenue (phase 5). La commande « @bot dis … » de la V1 est abandonnée volontairement.
 
 Le jour de la bascule, sur le Pi :
 
@@ -216,6 +232,7 @@ La CI GitHub Actions lance ces trois étapes puis construit l'image Docker pour 
 | Rien ne se passe en rejoignant « Créer un vocal » | ID du salon déclencheur absent ou faux | Vérifier `CHANNEL_CREATE_VOICE_*_ID` ; le log de démarrage signale un déclencheur introuvable |
 | « Il me manque des permissions Discord » sur verrouiller / inviter | `Manage Roles` absent | Donner `Manage Roles` au rôle du bot (placé en bas de la hiérarchie) |
 | Vocal créé mais membre pas déplacé | `Move Members` ou `Connect` absent sur la catégorie | Vérifier les permissions du rôle du bot sur la catégorie |
+| Aucun jeu gratuit annoncé | `CHANNEL_FREE_GAMES_ID` absent, ou premier passage silencieux | Vérifier le log au démarrage et `/freegames status` |
 | Renommage qui échoue | Discord limite fortement les renommages de salon | Attendre quelques minutes |
 | Warning `PyNaCl is not installed` | Normal : le bot ne joue pas d'audio | Rien à faire |
 | Bot ne redémarre pas après reboot du Pi | Service Docker non activé | `sudo systemctl enable docker` |
@@ -227,7 +244,7 @@ La CI GitHub Actions lance ces trois étapes puis construit l'image Docker pour 
 | 1 | Fondations : config, logging, SQLite + migrations, Docker, CI, `/bot status` | Terminé |
 | 2 | Vocaux temporaires | Terminé |
 | 3 | Qui joue ? (`/jouer`) | Terminé |
-| 4 | Jeux gratuits Steam / Epic / GOG | À faire |
+| 4 | Jeux gratuits Steam / Epic / GOG | Terminé |
 | 5 | Billy (IA) + `/blague` | À faire |
 | 6 | Hub `/mingati` | À faire |
 | 7 | Game night + commandes fun | À faire |

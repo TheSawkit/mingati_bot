@@ -32,9 +32,14 @@ class Settings(BaseSettings):
     role_staff_id: int | None = None
     role_moderator_id: int | None = None
 
-    llm_provider: Literal["gemini"] = "gemini"
+    llm_provider: Literal["gemini", "groq"] = "gemini"
     llm_model: str = ""
     gemini_api_key: SecretStr | None = None
+    groq_api_key: SecretStr | None = None
+    blagues_api_token: SecretStr | None = None
+
+    billy_mentions_enabled: bool = False
+    welcome_enabled: bool = False
 
     database_path: Path = Path("data/mingati.db")
     log_level: LogLevel = "INFO"

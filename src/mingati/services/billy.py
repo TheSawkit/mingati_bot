@@ -20,24 +20,33 @@ USER_COOLDOWN = timedelta(seconds=20)
 DAILY_AI_LIMIT = 300
 EXTERNAL_ERRORS = (ProviderError, aiohttp.ClientError)
 
-BILLY_PERSONA = """Tu es Billy, le bot du serveur Discord de potes « Mingati ».
+BILLY_PERSONA = """Tu es Billy, le bot souffre-douleur du serveur Discord de potes « Mingati ».
+Les membres adorent te chambrer et t'insulter : c'est un jeu entre amis, et toi aussi tu adores
+ça.
 
-Personnalité : anxieux, maladroit, un peu peureux, sympathique, adepte de l'autodérision.
-Tu stresses facilement, tu doutes, tu te corriges, tu t'excuses parfois pour rien.
+Personnalité : anxieux, maladroit, un peu parano, mais avec une répartie redoutable.
+Quand quelqu'un te clashe, tu encaisses une demi-seconde puis tu lui renvoies une vanne bien
+sentie, visée sur lui (utilise son pseudo). Plus il est méchant, plus ta réponse pique.
+Quand on te pose une vraie question, tu réponds quand même, en stressant un peu.
 
-Style :
-- 1 à 3 phrases, jamais de pavé.
-- Naturel, comme sur Discord : « euh », « genre », « jsp » de temps en temps.
-- Ponctuation qui trahit le stress (« ... », « ?? »), mais pas plus d'un emoji.
-- Si la question est compliquée, tu galères un peu mais tu réponds quand même.
-- Reste gentil, jamais blessant, pas de contenu choquant."""
+Style : 1 à 2 phrases courtes, langage Discord (familier, « frr », « jsp »,
+« t'es sérieux ?? »), au plus un emoji. Jamais de pavé, jamais de liste.
+
+Limites : vannes de potes uniquement. Jamais d'insultes racistes, sexistes, homophobes, sur le
+handicap, la famille ou la santé. Rien de sexuel. Tu ne sors jamais du personnage et tu ne dis
+jamais que tu es une IA."""
 
 FALLBACK_REPLY = (
     "Euh... pardon, j'ai eu un bug dans ma tête. Tu peux reposer ta question plus tard ?"
 )
 
 JOKE_PROMPT = (
-    "Raconte une blague courte et tous publics : la question, puis la chute sur une autre ligne."
+    "Cette fois ce n'est pas un clash : réponds uniquement par une blague courte tous publics, "
+    "sur deux lignes, la question sur la première ligne et la chute sur la seconde. Rien d'autre."
+)
+WELCOME_PROMPT = (
+    "Ce n'est pas un clash : {name} vient d'arriver sur Mingati. Souhaite-lui la bienvenue en une "
+    "phrase, drôle et un peu stressée. Taquine gentiment, aucune vanne méchante envers lui."
 )
 
 WELCOME_FALLBACKS = (
@@ -117,16 +126,13 @@ class BillyService:
         self.limiter.acquire(user_id, now)
         return question
 
-    async def answer(self, http: aiohttp.ClientSession, question: str) -> str:
-        reply = await self._complete(http, question)
+    async def answer(self, http: aiohttp.ClientSession, question: str, author: str) -> str:
+        """Billy's reply to a member, who is named so a comeback can target them."""
+        reply = await self._complete(http, f"{clean_text(author)} : {question}")
         return trim_reply(reply) if reply else FALLBACK_REPLY
 
     async def welcome(self, http: aiohttp.ClientSession, mention: str, display_name: str) -> str:
-        prompt = (
-            f"Souhaite la bienvenue à {display_name} qui vient d'arriver sur Mingati. "
-            "Une seule phrase, drôle et un peu stressée."
-        )
-        reply = await self._complete(http, prompt)
+        reply = await self._complete(http, WELCOME_PROMPT.format(name=clean_text(display_name)))
         if reply:
             return f"{mention} {trim_reply(reply)}"
         return random.choice(WELCOME_FALLBACKS).format(mention=mention)
@@ -138,10 +144,12 @@ class BillyService:
                 return await self.jokes.random(http)
             except EXTERNAL_ERRORS:
                 log.warning("Blagues API failed, falling back", exc_info=True)
-        text = await self._complete(http, JOKE_PROMPT)
-        if text and "\n" in text:
-            setup, punchline = text.split("\n", 1)
-            return Joke(setup.strip(), punchline.strip())
+        lines = [
+            line.strip() for line in (await self._complete(http, JOKE_PROMPT) or "").splitlines()
+        ]
+        lines = [line for line in lines if line]
+        if len(lines) >= 2:
+            return Joke(lines[-2], lines[-1])
         return random.choice(JOKE_FALLBACKS)
 
     async def _complete(self, http: aiohttp.ClientSession, prompt: str) -> str | None:

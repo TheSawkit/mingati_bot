@@ -43,7 +43,7 @@ class Billy(commands.Cog):
     ) -> None:
         cleaned = self.service.prepare_question(interaction.user.id, question, datetime.now(UTC))
         await interaction.response.defer(thinking=True)
-        reply = await self.service.answer(self._http(), cleaned)
+        reply = await self.service.answer(self._http(), cleaned, interaction.user.display_name)
         await interaction.followup.send(
             f"> {cleaned}\n{reply}", allowed_mentions=discord.AllowedMentions.none()
         )
@@ -70,7 +70,7 @@ class Billy(commands.Cog):
             await message.reply(str(error), mention_author=False)
             return
         async with message.channel.typing():
-            reply = await self.service.answer(self._http(), question)
+            reply = await self.service.answer(self._http(), question, message.author.display_name)
         await message.reply(
             reply, mention_author=False, allowed_mentions=discord.AllowedMentions.none()
         )

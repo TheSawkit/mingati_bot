@@ -5,10 +5,11 @@ from types import SimpleNamespace
 import pytest
 from discord import app_commands
 
-from mingati.bot import EXTENSIONS, MingatiBot, build_intents, describe_error
+from mingati.bot import EXTENSIONS, MingatiBot, build_intents
 from mingati.config import Settings
 from mingati.database import Database
 from mingati.errors import UserFacingError
+from mingati.interactions import describe_error
 from mingati.utils.logging import LastErrorHandler
 from mingati.utils.permissions import has_any_role
 
@@ -54,14 +55,22 @@ def test_extensions_import_cleanly() -> None:
         assert hasattr(importlib.import_module(extension), "setup")
 
 
-async def test_core_cog_registers_bot_status_command(tmp_path: Path) -> None:
+async def test_cogs_register_expected_commands_and_persistent_panel(tmp_path: Path) -> None:
     settings = Settings(discord_token="t", discord_guild_id=1)
     bot = MingatiBot(settings, Database(tmp_path / "db.sqlite"), LastErrorHandler())
 
     for extension in EXTENSIONS:
         await bot.load_extension(extension)
 
-    group = bot.tree.get_command("bot")
-    assert isinstance(group, app_commands.Group)
-    assert [command.name for command in group.commands] == ["status"]
+    registered = {
+        group.name: sorted(command.name for command in group.commands)
+        for group in bot.tree.get_commands()
+        if isinstance(group, app_commands.Group)
+    }
+    assert registered == {
+        "bot": ["status"],
+        "vocal": ["close", "invite", "limit", "lock", "rename", "transfer", "unlock"],
+    }
+    assert all(view.is_persistent() for view in bot.persistent_views)
+    assert len(bot.persistent_views) == 1
     await bot.close()

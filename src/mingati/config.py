@@ -39,6 +39,18 @@ class Settings(BaseSettings):
     log_level: LogLevel = "INFO"
 
     @property
+    def voice_trigger_ids(self) -> frozenset[int]:
+        """Channels that spawn a temporary voice room when someone joins them."""
+        return frozenset(
+            channel_id
+            for channel_id in (
+                self.channel_create_voice_general_id,
+                self.channel_create_voice_gaming_id,
+            )
+            if channel_id
+        )
+
+    @property
     def staff_role_ids(self) -> frozenset[int]:
         """Role IDs allowed to run staff-only commands."""
         return frozenset(

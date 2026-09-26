@@ -7,60 +7,25 @@ from discord.ext import commands
 
 from mingati.config import Settings
 from mingati.database import Database
-from mingati.errors import UserFacingError
+from mingati.interactions import report_error
 from mingati.utils.logging import LastErrorHandler
 
 log = logging.getLogger(__name__)
 
-EXTENSIONS = ("mingati.cogs.core",)
-
-GENERIC_ERROR = (
-    "Oups, quelque chose a planté de mon côté. Le staff peut voir le détail dans les logs."
-)
+EXTENSIONS = ("mingati.cogs.core", "mingati.cogs.voice")
 
 
 def build_intents() -> discord.Intents:
     """Least-privilege gateway intents; features opt in to extra intents explicitly."""
-    return discord.Intents(guilds=True)
-
-
-def describe_error(error: app_commands.AppCommandError) -> str | None:
-    """User-facing message for an expected app command failure, None when it is a real bug."""
-    original = getattr(error, "original", error)
-    if isinstance(original, UserFacingError):
-        return str(original)
-    if isinstance(error, app_commands.MissingAnyRole | app_commands.MissingRole):
-        return "Cette commande est réservée au staff."
-    if isinstance(error, app_commands.CommandOnCooldown):
-        return f"Doucement ! Réessaie dans {error.retry_after:.0f} s."
-    if isinstance(error, app_commands.NoPrivateMessage):
-        return "Cette commande ne marche que sur le serveur."
-    if isinstance(error, app_commands.BotMissingPermissions):
-        return "Il me manque des permissions Discord pour faire ça. Préviens le staff."
-    return None
-
-
-async def reply_ephemeral(interaction: discord.Interaction, content: str) -> None:
-    """Answer an interaction privately whether or not it has already been responded to."""
-    if interaction.response.is_done():
-        await interaction.followup.send(content, ephemeral=True)
-    else:
-        await interaction.response.send_message(content, ephemeral=True)
+    return discord.Intents(guilds=True, voice_states=True)
 
 
 class MingatiTree(app_commands.CommandTree):
     async def on_error(
         self, interaction: discord.Interaction, error: app_commands.AppCommandError
     ) -> None:
-        message = describe_error(error)
-        if message is None:
-            command = interaction.command.qualified_name if interaction.command else "?"
-            log.error("Unhandled error in /%s", command, exc_info=error)
-            message = GENERIC_ERROR
-        try:
-            await reply_ephemeral(interaction, message)
-        except discord.HTTPException:
-            log.warning("Could not deliver error message to the user", exc_info=True)
+        command = interaction.command.qualified_name if interaction.command else "?"
+        await report_error(interaction, error, f"/{command}")
 
 
 class MingatiBot(commands.Bot):

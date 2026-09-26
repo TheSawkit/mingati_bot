@@ -8,11 +8,13 @@ from discord.ext import commands
 from mingati.config import Settings
 from mingati.database import Database
 from mingati.interactions import report_error
+from mingati.services.gaming_sessions import GamingSessionService
+from mingati.services.voice_rooms import VoiceRoomService, VoiceRoomStore
 from mingati.utils.logging import LastErrorHandler
 
 log = logging.getLogger(__name__)
 
-EXTENSIONS = ("mingati.cogs.core", "mingati.cogs.voice")
+EXTENSIONS = ("mingati.cogs.core", "mingati.cogs.voice", "mingati.cogs.gaming")
 
 
 def build_intents() -> discord.Intents:
@@ -44,6 +46,8 @@ class MingatiBot(commands.Bot):
         self.settings = settings
         self.database = database
         self.last_error = last_error
+        self.voice_rooms = VoiceRoomService(VoiceRoomStore(database), settings.voice_trigger_ids)
+        self.gaming_sessions = GamingSessionService(database)
         self.started_at = datetime.now(UTC)
 
     @property

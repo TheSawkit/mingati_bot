@@ -55,3 +55,14 @@ def test_staff_role_ids_ignore_unset_roles() -> None:
     settings = Settings(discord_token="t", discord_guild_id=1, role_moderator_id=42)
 
     assert settings.staff_role_ids == frozenset({42})
+
+
+def test_unknown_timezone_is_rejected() -> None:
+    with pytest.raises(ValidationError, match="Unknown timezone"):
+        Settings(discord_token="t", discord_guild_id=1, timezone="Mars/Olympus")
+
+
+def test_timezone_defaults_to_brussels() -> None:
+    settings = Settings(discord_token="t", discord_guild_id=1)
+
+    assert settings.tz.key == "Europe/Brussels"

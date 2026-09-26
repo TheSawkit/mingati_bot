@@ -55,22 +55,22 @@ def test_extensions_import_cleanly() -> None:
         assert hasattr(importlib.import_module(extension), "setup")
 
 
-async def test_cogs_register_expected_commands_and_persistent_panel(tmp_path: Path) -> None:
+async def test_cogs_register_expected_commands_and_persistent_views(tmp_path: Path) -> None:
     settings = Settings(discord_token="t", discord_guild_id=1)
     bot = MingatiBot(settings, Database(tmp_path / "db.sqlite"), LastErrorHandler())
 
-    for extension in EXTENSIONS:
-        await bot.load_extension(extension)
+    async with bot:
+        for extension in EXTENSIONS:
+            await bot.load_extension(extension)
 
-    registered = {
-        group.name: sorted(command.name for command in group.commands)
-        for group in bot.tree.get_commands()
-        if isinstance(group, app_commands.Group)
-    }
-    assert registered == {
-        "bot": ["status"],
-        "vocal": ["close", "invite", "limit", "lock", "rename", "transfer", "unlock"],
-    }
-    assert all(view.is_persistent() for view in bot.persistent_views)
-    assert len(bot.persistent_views) == 1
-    await bot.close()
+        commands = {
+            command.name: sorted(sub.name for sub in getattr(command, "commands", []))
+            for command in bot.tree.get_commands()
+        }
+        assert commands == {
+            "bot": ["status"],
+            "vocal": ["close", "invite", "limit", "lock", "rename", "transfer", "unlock"],
+            "jouer": [],
+        }
+        assert len(bot.persistent_views) == 2
+        assert all(view.is_persistent() for view in bot.persistent_views)

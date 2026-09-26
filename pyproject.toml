@@ -10,6 +10,7 @@ dependencies = [
     "aiohttp>=3.12",
     "aiosqlite>=0.22",
     "pydantic-settings>=2.15",
+    "tzdata>=2025.2",
 ]
 
 [project.scripts]

@@ -1,7 +1,8 @@
 from pathlib import Path
 from typing import Literal
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from pydantic import SecretStr
+from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR"]
@@ -37,6 +38,21 @@ class Settings(BaseSettings):
 
     database_path: Path = Path("data/mingati.db")
     log_level: LogLevel = "INFO"
+    timezone: str = "Europe/Brussels"
+
+    @field_validator("timezone")
+    @classmethod
+    def _known_timezone(cls, value: str) -> str:
+        try:
+            ZoneInfo(value)
+        except (ZoneInfoNotFoundError, ValueError) as error:
+            raise ValueError(f"Unknown timezone {value!r}, e.g. Europe/Brussels") from error
+        return value
+
+    @property
+    def tz(self) -> ZoneInfo:
+        """Timezone used to read times typed by members, such as '21h'."""
+        return ZoneInfo(self.timezone)
 
     @property
     def voice_trigger_ids(self) -> frozenset[int]:

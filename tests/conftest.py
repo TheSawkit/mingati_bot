@@ -3,7 +3,16 @@ from pathlib import Path
 
 import pytest
 
-CONFIG_PREFIXES = ("DISCORD_", "CHANNEL_", "ROLE_", "LLM_", "GEMINI_", "DATABASE_", "LOG_")
+CONFIG_PREFIXES = (
+    "DISCORD_",
+    "CHANNEL_",
+    "ROLE_",
+    "LLM_",
+    "GEMINI_",
+    "DATABASE_",
+    "LOG_",
+    "TIMEZONE",
+)
 
 
 @pytest.fixture(autouse=True)

@@ -224,6 +224,8 @@ refresh (toutes les 2 h ou /freegames refresh)
 - `GameServerService.statuses` interroge tous les serveurs en parallèle (`asyncio.gather`).
 - Ajouter un jeu : écrire un provider et l'ajouter à `default_server_providers()`.
 
-## Suite
+## Présence
 
-Phase 9 (présence, jeux lancés par les membres) : optionnelle, demande l'intent privilégié *Presence*, à valider avant de la construire.
+- `services/presence.py` : fonctions pures sur les `Member` du cache (`activity.type is ActivityType.playing`), regroupées par jeu. Aucune table.
+- `PRESENCE_ENABLED` active `presences` **et** `members` : `MemberCacheFlags.from_intents` ne met en cache que les membres en vocal sans `members`.
+- Le cog n'est ajouté que si l'option est active : `/en-jeu` n'existe pas sinon.

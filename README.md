@@ -2,7 +2,7 @@
 
 Bot Discord privé du serveur **Mingati !** (~20 potes). Petit, fiable, pensé pour tourner 24/7 sur un Raspberry Pi.
 
-> **V2 en cours de reconstruction.** Phases 1 à 8 terminées. La phase 9 (présence) est optionnelle et attend ta validation. Les fonctionnalités arrivent phase par phase — voir [Roadmap](#roadmap).
+> **V2.** Toutes les phases (1 à 9) sont codées et testées. Reste la validation sur le vrai serveur Mingati avant de remplacer la V1 — voir [Roadmap](#roadmap).
 
 ## Sommaire
 
@@ -32,6 +32,7 @@ Bot Discord privé du serveur **Mingati !** (~20 potes). Petit, fiable, pensé p
 | `/dé` `/coinflip` `/8ball` `/roulette` `/random-game` | Tout le monde | Commandes fun |
 | `/server status` | Tout le monde | État des serveurs de jeux suivis |
 | `/server add` `remove` | Staff | Gère la liste des serveurs suivis |
+| `/en-jeu` | Tout le monde | Qui joue à quoi en ce moment (si `PRESENCE_ENABLED=true`) |
 
 ### Vocaux temporaires
 
@@ -100,6 +101,10 @@ Toutes les commandes sont des **slash commands** synchronisées sur le serveur M
 ### Serveurs de jeux
 
 Le staff ajoute un serveur depuis Discord : `/server add nom:Survie adresse:mc.exemple.fr` (port optionnel, `host:port`). `/server status` affiche pour chacun : en ligne / hors ligne, joueurs, maximum, version, latence et MOTD. Premier jeu pris en charge : **Minecraft Java** (via [mcstatus](https://pypi.org/project/mcstatus/)) ; d'autres jeux = un nouveau provider.
+
+### Présence (optionnelle)
+
+Avec `PRESENCE_ENABLED=true`, `/en-jeu` liste les membres en jeu, regroupés par jeu, et le bouton 🎮 Qui joue ? du hub ajoute cette section. Rien n'est stocké : c'est lu en direct dans le cache Discord. **Demande deux intents privilégiés** (*Presence* et *Server Members*) à activer dans le Developer Portal : sans *Server Members*, discord.py ne garde en cache que les membres en vocal.
 
 ### Billy
 
@@ -175,8 +180,8 @@ Sans `Manage Roles`, les vocaux sont quand même créés et supprimés ; seuls v
 | Voice States | Oui | Vocaux temporaires (non privilégié) |
 | Guild Messages | Si `BILLY_MENTIONS_ENABLED=true` | Recevoir les messages qui mentionnent Billy (non privilégié) |
 | Message Content | Non | Jamais nécessaire, même pour `@Billy` |
-| Server Members | Si `WELCOME_ENABLED=true` | Message de bienvenue et retrait des sessions quand un membre part. **Privilégié** : à activer dans le portail |
-| Presence | Non | Uniquement si la feature présence est activée (phase 9) |
+| Server Members | Si `WELCOME_ENABLED=true` ou `PRESENCE_ENABLED=true` | Bienvenue, cache des membres pour `/en-jeu`, retrait des sessions quand un membre part. **Privilégié** : à activer dans le portail |
+| Presence | Si `PRESENCE_ENABLED=true` | `/en-jeu`. **Privilégié**, avec *Server Members* |
 
 ## Configuration
 
@@ -204,6 +209,7 @@ Puis remplir `.env`. Le fichier n'est **jamais** commité.
 | `GROQ_API_KEY` | Non | Clé Groq si `LLM_PROVIDER=groq` |
 | `BLAGUES_API_TOKEN` | Non | Token [blagues-api.fr](https://www.blagues-api.fr) pour `/blague` |
 | `BILLY_MENTIONS_ENABLED` | Non | `true` pour que Billy réponde aux mentions, défaut `false` |
+| `PRESENCE_ENABLED` | Non | `true` pour `/en-jeu`, défaut `false` (2 intents privilégiés) |
 | `WELCOME_ENABLED` | Non | `true` pour le message de bienvenue, défaut `false` (intent privilégié) |
 | `DATABASE_PATH` | Non | Chemin SQLite, défaut `data/mingati.db` |
 | `LOG_LEVEL` | Non | `DEBUG`, `INFO` (défaut), `WARNING`, `ERROR` |
@@ -303,4 +309,4 @@ La CI GitHub Actions lance ces trois étapes puis construit l'image Docker pour 
 | 6 | Hub `/mingati` | Terminé |
 | 7 | Game night + commandes fun | Terminé |
 | 8 | Serveurs de jeux (Minecraft) | Terminé |
-| 9 | Optionnel (présence…) | À valider |
+| 9 | Présence (optionnelle, désactivée par défaut) | Terminé |

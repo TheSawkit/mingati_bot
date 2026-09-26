@@ -1,3 +1,4 @@
+from importlib import resources
 from pathlib import Path
 
 import pytest
@@ -90,10 +91,12 @@ def test_gaps_in_migration_numbers_are_rejected(tmp_path: Path) -> None:
         discover_migrations(directory)
 
 
-async def test_packaged_migrations_apply_cleanly(tmp_path: Path, open_database) -> None:
+async def test_every_packaged_migration_is_applied(open_database) -> None:
     database = await open_database()
 
-    assert await database.schema_version() >= 0
+    packaged = discover_migrations(resources.files("mingati") / "migrations")
+    assert packaged
+    assert await database.schema_version() == len(packaged)
 
 
 async def test_wal_uses_normal_synchronous_mode(tmp_path: Path, open_database) -> None:

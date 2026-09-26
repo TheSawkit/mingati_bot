@@ -26,11 +26,6 @@ class FakeCategory:
 
 
 @dataclass(eq=False)
-class FakeMessage:
-    id: int = field(default_factory=lambda: next(_ids))
-
-
-@dataclass(eq=False)
 class FakeVoiceChannel:
     guild: "FakeGuild"
     name: str
@@ -39,7 +34,6 @@ class FakeVoiceChannel:
     user_limit: int = 0
     bitrate: int = 64000
     members: list["FakeMember"] = field(default_factory=list)
-    sent: list[dict[str, Any]] = field(default_factory=list)
     deleted: bool = False
     fail_delete: bool = False
     id: int = field(default_factory=lambda: next(_ids))
@@ -59,10 +53,6 @@ class FakeVoiceChannel:
             raise http_error(discord.NotFound, 404)
         self.deleted = True
         self.guild.channels.pop(self.id, None)
-
-    async def send(self, *args: Any, **kwargs: Any) -> FakeMessage:
-        self.sent.append(kwargs)
-        return FakeMessage()
 
 
 @dataclass(eq=False)

@@ -1,4 +1,3 @@
-import importlib
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -48,11 +47,6 @@ def test_unexpected_error_has_no_user_message() -> None:
 )
 def test_has_any_role(roles: set[int], allowed: frozenset[int], expected: bool) -> None:
     assert has_any_role(roles, allowed) is expected
-
-
-def test_extensions_import_cleanly() -> None:
-    for extension in EXTENSIONS:
-        assert hasattr(importlib.import_module(extension), "setup")
 
 
 async def test_cogs_register_expected_commands_and_persistent_views(tmp_path: Path) -> None:

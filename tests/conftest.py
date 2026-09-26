@@ -3,25 +3,17 @@ from pathlib import Path
 
 import pytest
 
+from mingati.config import Settings
 from mingati.database import Database
 
-CONFIG_PREFIXES = (
-    "DISCORD_",
-    "CHANNEL_",
-    "ROLE_",
-    "LLM_",
-    "GEMINI_",
-    "DATABASE_",
-    "LOG_",
-    "TIMEZONE",
-)
+CONFIG_KEYS = {name.upper() for name in Settings.model_fields}
 
 
 @pytest.fixture(autouse=True)
 def isolated_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.chdir(tmp_path)
     for key in os.environ:
-        if key.startswith(CONFIG_PREFIXES):
+        if key.upper() in CONFIG_KEYS:
             monkeypatch.delenv(key)
 
 

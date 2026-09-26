@@ -54,9 +54,10 @@ def clean_text(raw: str | None) -> str:
 
 def parse_start(raw: str | None, now: datetime) -> datetime:
     """Parse '21h', '21h30' or '21:30' in now's timezone; a time already passed means tomorrow."""
-    if raw is None or not raw.strip() or raw.strip().lower() == "maintenant":
+    text = (raw or "").strip().lower()
+    if text in ("", "maintenant"):
         return now
-    match = TIME_PATTERN.match(raw.strip().lower())
+    match = TIME_PATTERN.match(text)
     if match is None:
         raise UserFacingError("Heure invalide. Exemples : `21h`, `21h30`, `21:30`, `maintenant`.")
     start = now.replace(

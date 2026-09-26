@@ -27,7 +27,7 @@ class VoiceControls(Protocol):
 def build_panel_embed(room: VoiceRoom) -> discord.Embed:
     """Control panel shown in the room's text chat."""
     state = "🔒 Verrouillé" if room.is_locked else "🔓 Ouvert"
-    embed = discord.Embed(
+    return discord.Embed(
         title="🔊 Ton salon vocal",
         description=(
             f"👑 Propriétaire : <@{room.owner_id}>\n"
@@ -37,7 +37,6 @@ def build_panel_embed(room: VoiceRoom) -> discord.Embed:
         ),
         color=discord.Color.blurple(),
     )
-    return embed
 
 
 def parse_limit(raw: str) -> int:

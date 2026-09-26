@@ -332,10 +332,9 @@ class VoiceRoomService:
 
     async def set_limit(
         self, actor: discord.Member, channel: discord.VoiceChannel, limit: int
-    ) -> int:
+    ) -> None:
         await self.require_owned_room(actor, channel.id)
         await channel.edit(user_limit=validate_limit(limit))
-        return limit
 
     async def lock(self, actor: discord.Member, channel: discord.VoiceChannel) -> VoiceRoom:
         room = await self.require_owned_room(actor, channel.id)

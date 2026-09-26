@@ -263,12 +263,9 @@ class VoiceRoomService:
                 await self._grant_access(channel, guests)
                 return existing, False
 
-            channel = await self._create_channel(
-                trigger, validate_name(name), [owner, *guests], validate_limit(user_limit)
+            room, channel = await self._create_room(
+                owner, trigger, validate_name(name), guests, validate_limit(user_limit)
             )
-            room = VoiceRoom(channel.id, owner.guild.id, owner.id, trigger.id)
-            await self.store.add(room)
-            log.info("Created session voice room %s for member %s", channel.id, owner.id)
             if owner.voice is not None:
                 try:
                     await owner.move_to(channel)
@@ -405,16 +402,22 @@ class VoiceRoomService:
                 return None
             await self.store.delete(existing.channel_id)
 
-        channel = await self._create_channel(trigger, room_name(member.display_name), [member])
-        room = VoiceRoom(
-            channel_id=channel.id,
-            guild_id=member.guild.id,
-            owner_id=member.id,
-            trigger_channel_id=trigger.id,
-        )
-        await self.store.add(room)
-        log.info("Created temporary voice room %s for member %s", channel.id, member.id)
+        room, channel = await self._create_room(member, trigger, room_name(member.display_name))
         return room if await self._move_or_cleanup(member, channel) else None
+
+    async def _create_room(
+        self,
+        owner: discord.Member,
+        trigger: discord.VoiceChannel,
+        name: str,
+        guests: Sequence[discord.abc.Snowflake] = (),
+        user_limit: int = 0,
+    ) -> tuple[VoiceRoom, discord.VoiceChannel]:
+        channel = await self._create_channel(trigger, name, [owner, *guests], user_limit)
+        room = VoiceRoom(channel.id, owner.guild.id, owner.id, trigger.id)
+        await self.store.add(room)
+        log.info("Created temporary voice room %s for member %s", channel.id, owner.id)
+        return room, channel
 
     async def _create_channel(
         self,

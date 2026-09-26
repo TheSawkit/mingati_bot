@@ -41,6 +41,7 @@ class FakeVoiceChannel:
     members: list["FakeMember"] = field(default_factory=list)
     sent: list[dict[str, Any]] = field(default_factory=list)
     deleted: bool = False
+    fail_delete: bool = False
     id: int = field(default_factory=lambda: next(_ids))
 
     @property
@@ -52,6 +53,8 @@ class FakeVoiceChannel:
             setattr(self, key, value)
 
     async def delete(self, reason: str | None = None) -> None:
+        if self.fail_delete:
+            raise http_error(discord.DiscordServerError, 503)
         if self.deleted:
             raise http_error(discord.NotFound, 404)
         self.deleted = True

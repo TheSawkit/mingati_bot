@@ -438,10 +438,14 @@ class VoiceRoomService:
         if not isinstance(channel, discord.VoiceChannel):
             await self.store.delete(room.channel_id)
             return True
-        if not humans(channel.members):
+        if humans(channel.members):
+            return False
+        try:
             await self._delete(channel)
-            return True
-        return False
+        except discord.HTTPException:
+            log.warning("Could not delete room %s, will retry", channel.id, exc_info=True)
+            return False
+        return True
 
     async def _grant_access(
         self, channel: discord.VoiceChannel, members: Sequence[discord.abc.Snowflake]

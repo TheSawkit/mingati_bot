@@ -1,11 +1,16 @@
+import logging
 import re
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 import aiosqlite
+import discord
 
 from mingati.database import Database
 from mingati.errors import UserFacingError
+
+log = logging.getLogger(__name__)
 
 MIN_PLAYERS = 2
 MAX_PLAYERS = 20
@@ -33,6 +38,9 @@ class GamingSession:
     @property
     def is_full(self) -> bool:
         return len(self.member_ids) >= self.max_players
+
+
+CardRemover = Callable[[GamingSession], Awaitable[None]]
 
 
 @dataclass(frozen=True, slots=True)
@@ -211,15 +219,26 @@ class GamingSessionService:
     async def delete(self, session_id: int) -> None:
         await self.database.execute("DELETE FROM gaming_sessions WHERE id = ?", (session_id,))
 
-    async def pop_expired(self, now: datetime) -> list[GamingSession]:
-        """Delete and return every session whose time window is over."""
+    async def list_expired(self, now: datetime) -> list[GamingSession]:
         rows = await self.database.fetch_all(
             "SELECT id FROM gaming_sessions WHERE expires_at <= ?", (int(now.timestamp()),)
         )
-        sessions = [await self._require(row["id"]) for row in rows]
-        for session in sessions:
+        return [await self._require(row["id"]) for row in rows]
+
+    async def expire(self, now: datetime, remove_card: CardRemover) -> int:
+        """Remove each finished session after its card; a Discord failure keeps it for next run."""
+        expired = 0
+        for session in await self.list_expired(now):
+            try:
+                await remove_card(session)
+            except discord.HTTPException:
+                log.warning(
+                    "Could not remove card of expired session %s", session.id, exc_info=True
+                )
+                continue
             await self.delete(session.id)
-        return sessions
+            expired += 1
+        return expired
 
     async def remove_member_everywhere(
         self, guild_id: int, user_id: int

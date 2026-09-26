@@ -419,3 +419,16 @@ async def test_panel_message_is_remembered(service, guild, trigger) -> None:
     await service.attach_panel(channel.id, 777)
 
     assert (await service.store.get(channel.id)).panel_message_id == 777
+
+
+async def test_sweep_survives_a_discord_error_on_one_room(service, guild, trigger) -> None:
+    owner = guild.add_member("Alice")
+    broken, _ = await service.open_session_room(owner, trigger, "🎮 A", [], 4)
+    healthy, _ = await service.open_session_room(guild.add_member("Bob"), trigger, "🎮 B", [], 4)
+    guild.get_channel(broken.channel_id).fail_delete = True
+
+    removed = await service.sweep_unused(guild, datetime.now(UTC) + timedelta(seconds=1))
+
+    assert removed == 1
+    assert guild.get_channel(healthy.channel_id) is None
+    assert await service.store.get(broken.channel_id) is not None

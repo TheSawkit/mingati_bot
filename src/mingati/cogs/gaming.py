@@ -144,9 +144,9 @@ class Gaming(commands.Cog):
 
     @tasks.loop(minutes=1)
     async def expire_sessions(self) -> None:
-        for session in await self.sessions.pop_expired(datetime.now(UTC)):
-            await self._delete_card(session)
-            log.info("Gaming session %s expired", session.id)
+        expired = await self.sessions.expire(datetime.now(UTC), self._delete_card)
+        if expired:
+            log.info("%d gaming sessions expired", expired)
 
     @expire_sessions.before_loop
     async def before_expire(self) -> None:

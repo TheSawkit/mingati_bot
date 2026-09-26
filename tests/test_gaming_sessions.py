@@ -1,7 +1,9 @@
 import asyncio
 from datetime import UTC, datetime, timedelta
+from types import SimpleNamespace
 from zoneinfo import ZoneInfo
 
+import discord
 import pytest
 
 from mingati.database import Database
@@ -111,10 +113,16 @@ async def test_expired_sessions_are_removed(service: GamingSessionService) -> No
     short = await service.create(planned(host=1, duration_hours=1), NOW)
     long = await service.create(planned(host=2, duration_hours=5), NOW)
 
-    expired = await service.pop_expired((NOW + timedelta(hours=2)).astimezone(UTC))
+    removed: list[int] = []
 
-    assert [session.id for session in expired] == [short.id]
-    assert await service.pop_expired(NOW + timedelta(hours=2)) == []
+    async def remove_card(session) -> None:
+        removed.append(session.id)
+
+    later = (NOW + timedelta(hours=2)).astimezone(UTC)
+    assert await service.expire(later, remove_card) == 1
+
+    assert removed == [short.id]
+    assert await service.list_expired(later) == []
     await service.attach_message(long.id, 555)
     assert (await service.get_by_message(555)).id == long.id
 
@@ -187,3 +195,22 @@ async def test_deleted_voice_room_is_unlinked_from_its_session(
     assert unlinked[0].voice_channel_id is None
     assert "<#555>" not in build_session_embed(unlinked[0]).description
     assert await service.detach_voice_channel(555) == []
+
+
+async def test_expiry_keeps_a_session_whose_card_could_not_be_removed(
+    service: GamingSessionService,
+) -> None:
+    failing = await service.create(planned(host=1, duration_hours=1), NOW)
+    ok = await service.create(planned(host=2, duration_hours=1), NOW)
+    removed_cards: list[int] = []
+
+    async def remove_card(session) -> None:
+        if session.id == failing.id:
+            raise discord.DiscordServerError(SimpleNamespace(status=503, reason="down"), "down")
+        removed_cards.append(session.id)
+
+    later = NOW + timedelta(hours=2)
+    assert await service.expire(later, remove_card) == 1
+
+    assert removed_cards == [ok.id]
+    assert [s.id for s in await service.list_expired(later)] == [failing.id]

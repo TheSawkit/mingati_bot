@@ -1,0 +1,48 @@
+[project]
+name = "mingati-bot"
+version = "2.0.0"
+description = "Bot Discord privé du serveur Mingati"
+readme = "README.md"
+authors = [{ name = "SAWKIT" }]
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "discord.py>=2.7.1,<2.8",
+    "aiohttp>=3.12",
+    "aiosqlite>=0.22",
+    "pydantic-settings>=2.15",
+    "tzdata>=2025.2",
+    "mcstatus>=14.2",
+]
+
+[project.scripts]
+mingati = "mingati.__main__:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1",
+    "pytest-asyncio>=1.4",
+    "ruff>=0.16",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.17,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "mingati"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "ASYNC", "RUF", "N"]
+
+[tool.ruff.lint.isort]
+known-local-folder = ["fakes"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+filterwarnings = ["ignore:'audioop' is deprecated:DeprecationWarning"]

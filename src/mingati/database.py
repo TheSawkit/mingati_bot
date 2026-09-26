@@ -55,6 +55,7 @@ class Database:
         self._connection.row_factory = aiosqlite.Row
         await self._connection.execute("PRAGMA foreign_keys = ON")
         await self._connection.execute("PRAGMA journal_mode = WAL")
+        await self._connection.execute("PRAGMA synchronous = NORMAL")
         await self._connection.execute("PRAGMA busy_timeout = 5000")
         await self._migrate()
 

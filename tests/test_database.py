@@ -102,3 +102,12 @@ async def test_packaged_migrations_apply_cleanly(tmp_path: Path) -> None:
 
     assert await database.schema_version() >= 0
     await database.close()
+
+
+async def test_wal_uses_normal_synchronous_mode(tmp_path: Path) -> None:
+    database = Database(tmp_path / "test.db", write_migrations(tmp_path / "m"))
+    await database.connect()
+
+    assert (await database.fetch_one("PRAGMA journal_mode"))[0] == "wal"
+    assert (await database.fetch_one("PRAGMA synchronous"))[0] == 1
+    await database.close()

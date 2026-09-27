@@ -1,0 +1,38 @@
+{
+ "sections": [
+  {
+   "sectionId": "530a9d97-d94f-48a8-891c-f69524d9c543",
+   "sectionType": "TAKEOVER_SECTION",
+   "isPersonalized": false,
+   "hideOnLoad": false,
+   "loadOnEmbed": true,
+   "ignoreOs": null,
+   "contentSourceType": "static"
+  },
+  {
+   "sectionId": "2",
+   "sectionType": "GIVEAWAY_SECTION",
+   "isPersonalized": false,
+   "hideOnLoad": false,
+   "contentSourceType": "static"
+  },
+  {
+   "sectionId": "10224066-30ca-408c-baa0-efed01aad9c9",
+   "sectionType": "PRODUCTS_SECTION",
+   "isPersonalized": true,
+   "hideOnLoad": false,
+   "loadOnEmbed": true,
+   "ignoreOs": null,
+   "contentSourceType": "dynamic"
+  },
+  {
+   "sectionId": "470fd163-e983-4303-9e76-22f81ec8b9e1",
+   "sectionType": "PRODUCTS_SECTION",
+   "isPersonalized": false,
+   "hideOnLoad": false,
+   "loadOnEmbed": true,
+   "ignoreOs": null,
+   "contentSourceType": "static"
+  }
+ ]
+}

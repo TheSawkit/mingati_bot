@@ -6,7 +6,7 @@ import pytest
 
 from mingati.providers.games.base import FreeGame
 from mingati.providers.games.epic import parse_epic
-from mingati.providers.games.gog import parse_gog
+from mingati.providers.games.gog import giveaway_section_ids, parse_gog, parse_gog_giveaway
 from mingati.providers.games.steam import parse_steam_details, parse_steam_search
 from mingati.providers.http import ProviderError
 
@@ -75,3 +75,32 @@ def test_offer_key_changes_when_the_same_game_is_offered_again() -> None:
 
     assert first.offer_key != again.offer_key
     assert open_ended.offer_key == "steam:42:open"
+
+
+def test_gog_giveaway_sections_are_found_in_the_homepage_index() -> None:
+    assert giveaway_section_ids(load("gog_sections_index.json")) == ["2"]
+    assert giveaway_section_ids({"sections": []}) == []
+
+
+def test_gog_giveaway_becomes_a_free_game_until_its_end_date() -> None:
+    game = parse_gog_giveaway(load("gog_giveaway_section.json"), DURING_GIVEAWAY)
+
+    assert game == FreeGame(
+        source="gog",
+        external_id="1207658930",
+        title="Heroes of Might and Magic® 3: Complete",
+        url="https://www.gog.com/fr/game/heroes_of_might_and_magic_3_complete_edition",
+        image_url="https://images.gog-statics.com/giveaway-cover.png",
+        ends_at=datetime(2026, 9, 29, 13, 0, tzinfo=UTC),
+    )
+    assert (
+        parse_gog_giveaway(load("gog_giveaway_section.json"), datetime(2026, 10, 1, tzinfo=UTC))
+        is None
+    )
+
+
+def test_gog_giveaway_without_a_usable_product_is_ignored() -> None:
+    assert parse_gog_giveaway({"properties": {}}, DURING_GIVEAWAY) is None
+    dlc = load("gog_giveaway_section.json")
+    dlc["properties"]["product"]["productType"] = "dlc"
+    assert parse_gog_giveaway(dlc, DURING_GIVEAWAY) is None

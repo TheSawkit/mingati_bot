@@ -237,6 +237,7 @@ Le jour de la bascule, sur la machine qui héberge la V1 :
 | Les commandes `/` n'apparaissent pas | Scope `applications.commands` oublié | Réinviter le bot avec les deux scopes (étape 3) |
 | `PermissionError` sur `data/` | Dossier `data` créé par root | `sudo chown -R 1000:1000 data` |
 | `unable to open database file` | Dossier `data/` absent | `mkdir -p data` |
+| Toutes les commandes échouent (« L'application ne répond plus »), log `Interaction … expired before the bot answered` | DNS lent dans le conteneur : souvent un **Pi-hole** sur la même machine, qui ne répond pas au réseau Docker (≈ 4 s par requête, Discord n'en laisse que 3) | Créer `compose.override.yaml` à côté de `compose.yaml` avec `services: {mingati-bot: {dns: [1.1.1.1, 1.0.0.1]}}`, puis `docker compose up -d` |
 | Rien ne se passe en rejoignant « Créer un vocal » | Identifiant du salon absent ou faux | Vérifier `CHANNEL_CREATE_VOICE_*_ID` ; le log de démarrage signale un salon introuvable |
 | « Il me manque des permissions Discord » en verrouillant ou invitant | `Manage Roles` absent | Donner `Manage Roles` au rôle du bot, placé en bas de la liste |
 | Vocal créé mais membre pas déplacé | `Move Members` ou `Connect` absent sur la catégorie | Vérifier les permissions du rôle du bot sur la catégorie |

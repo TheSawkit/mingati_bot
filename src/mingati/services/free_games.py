@@ -34,7 +34,6 @@ class RefreshReport:
     found: dict[str, int] = field(default_factory=dict)
     errors: dict[str, str] = field(default_factory=dict)
     published: int = 0
-    silent_first_run: bool = False
 
 
 def is_publishable(game: FreeGame, now: datetime) -> bool:
@@ -91,9 +90,7 @@ class FreeGameService:
                     await self._record_failure(provider.name, report.errors[provider.label], now)
                     continue
                 games = [game for game in result if is_publishable(game, now)]
-                silent = not await self._has_succeeded(provider.name)
-                report.silent_first_run |= silent
-                await self._store(provider.name, games, silent, now)
+                await self._store(provider.name, games)
                 await self._record_success(provider.name, len(games), now)
                 report.found[provider.label] = len(games)
 
@@ -107,8 +104,7 @@ class FreeGameService:
     async def active(self, now: datetime) -> list[FreeGame]:
         """Offers announced and still running, for status displays."""
         rows = await self.database.fetch_all(
-            "SELECT * FROM free_games WHERE published_at IS NOT NULL"
-            " AND (ends_at IS NULL OR ends_at > ?) ORDER BY first_seen_at",
+            "SELECT * FROM free_games WHERE ends_at IS NULL OR ends_at > ? ORDER BY first_seen_at",
             (_timestamp(now),),
         )
         return [_game_from_row(row) for row in rows]
@@ -135,18 +131,11 @@ class FreeGameService:
         row = await self.database.fetch_one("SELECT MAX(last_success_at) FROM game_sources")
         return _datetime(row[0]) if row else None
 
-    async def _has_succeeded(self, source: str) -> bool:
-        row = await self.database.fetch_one(
-            "SELECT last_success_at FROM game_sources WHERE name = ?", (source,)
-        )
-        return bool(row and row["last_success_at"] is not None)
-
-    async def _store(self, source: str, games: list[FreeGame], silent: bool, now: datetime) -> None:
-        published_at = _timestamp(now) if silent else None
+    async def _store(self, source: str, games: list[FreeGame]) -> None:
         async with self.database.transaction() as connection:
             await connection.executemany(
                 "INSERT OR IGNORE INTO free_games (source, external_id, title, url, image_url,"
-                " starts_at, ends_at, offer_key, published_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                " starts_at, ends_at, offer_key) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                 [
                     (
                         game.source,
@@ -157,7 +146,6 @@ class FreeGameService:
                         _timestamp(game.starts_at),
                         _timestamp(game.ends_at),
                         game.offer_key,
-                        published_at,
                     )
                     for game in games
                 ],
@@ -172,7 +160,7 @@ class FreeGameService:
 
     async def _publish_pending(self, publish: Publisher, now: datetime) -> int:
         rows = await self.database.fetch_all(
-            "SELECT * FROM free_games WHERE published_at IS NULL"
+            "SELECT * FROM free_games WHERE message_id IS NULL"
             " AND (ends_at IS NULL OR ends_at > ?) ORDER BY first_seen_at",
             (_timestamp(now),),
         )

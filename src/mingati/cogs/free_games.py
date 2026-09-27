@@ -24,8 +24,6 @@ def describe_report(report: RefreshReport) -> str:
     lines = [f"✅ {label} : {count} jeu(x)" for label, count in report.found.items()]
     lines += [f"⚠️ {label} : {error[:150]}" for label, error in report.errors.items()]
     lines.append(f"📣 {report.published} nouvelle(s) annonce(s)")
-    if report.silent_first_run:
-        lines.append("Premier passage : les jeux déjà gratuits sont enregistrés sans annonce.")
     return "\n".join(lines)
 
 

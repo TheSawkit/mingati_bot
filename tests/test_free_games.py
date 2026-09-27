@@ -75,14 +75,14 @@ async def warm_up(service: FreeGameService, channel: FakeChannel) -> None:
     await service.refresh(HTTP, channel.publish, NOW)
 
 
-async def test_first_run_records_current_games_without_announcing(service, epic) -> None:
+async def test_games_already_free_at_first_run_are_announced(service, epic) -> None:
     epic.games = [epic_game()]
     channel = FakeChannel()
 
     report = await service.refresh(HTTP, channel.publish, NOW)
 
-    assert report.silent_first_run
-    assert channel.announced == []
+    assert report.published == 1
+    assert channel.announced == ["Epic 1"]
     assert [game.title for game in await service.active(NOW)] == ["Epic 1"]
 
 
@@ -96,7 +96,7 @@ async def test_new_game_is_announced_exactly_once(service, epic) -> None:
     second = await service.refresh(HTTP, channel.publish, NOW + timedelta(hours=2))
 
     assert first.published == 1 and second.published == 0
-    assert channel.announced == ["Epic new"]
+    assert channel.announced == ["Epic old", "Epic new"]
 
 
 async def test_failing_provider_does_not_block_the_others(service, epic, steam) -> None:
@@ -184,16 +184,16 @@ async def test_game_appearing_after_an_empty_first_run_is_announced(service, epi
     assert channel.announced == ["Epic later"]
 
 
-async def test_source_that_failed_on_first_run_stays_silent_on_its_first_success(
-    service, epic
-) -> None:
+async def test_offer_recorded_but_never_posted_is_announced(service, epic, database) -> None:
+    game = epic_game("silent")
+    await database.execute(
+        "INSERT INTO free_games (source, external_id, title, url, ends_at, offer_key, published_at)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?)",
+        ("epic", "silent", game.title, game.url, int(game.ends_at.timestamp()), game.offer_key, 1),
+    )
+    epic.games = [game]
     channel = FakeChannel()
-    epic.error = ProviderError("down")
-    await warm_up(service, channel)
-    epic.error = None
-    epic.games = [epic_game("already-free")]
 
-    report = await service.refresh(HTTP, channel.publish, NOW)
+    await service.refresh(HTTP, channel.publish, NOW)
 
-    assert report.silent_first_run
-    assert channel.announced == []
+    assert channel.announced == ["Epic silent"]

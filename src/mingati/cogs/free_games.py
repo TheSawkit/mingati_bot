@@ -12,7 +12,12 @@ from mingati.errors import UserFacingError
 from mingati.providers.games import FreeGame
 from mingati.services.free_games import RefreshReport
 from mingati.utils.permissions import staff_only
-from mingati.views.free_games import build_free_game_embed, build_status_embed
+from mingati.views.free_games import (
+    build_announcement,
+    build_status_embed,
+    find_logo,
+    platform_style,
+)
 
 log = logging.getLogger(__name__)
 
@@ -83,7 +88,11 @@ class FreeGames(commands.Cog):
             raise UserFacingError("Le bot n'est pas encore prêt, réessaie dans un instant.")
 
         async def publish(game: FreeGame) -> int:
-            message = await channel.send(embed=build_free_game_embed(game))
+            logo = find_logo(channel.guild.emojis, platform_style(game.source))
+            announcement = build_announcement(game, logo)
+            message = await channel.send(
+                content=announcement.content, embed=announcement.embed, view=announcement.view
+            )
             return message.id
 
         return await self.service.refresh(self.bot.http_session, publish, datetime.now(UTC))

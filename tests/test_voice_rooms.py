@@ -432,3 +432,21 @@ async def test_sweep_survives_a_discord_error_on_one_room(service, guild, trigge
     assert removed == 1
     assert guild.get_channel(healthy.channel_id) is None
     assert await service.store.get(broken.channel_id) is not None
+
+
+async def test_bot_own_deletion_is_not_reported_as_an_outside_deletion(
+    service, guild, trigger, caplog: pytest.LogCaptureFixture
+) -> None:
+    member, _, channel = await open_room(service, guild, trigger)
+    gateway_events: list[asyncio.Task[None]] = []
+    channel.on_delete = lambda: gateway_events.append(
+        asyncio.create_task(service.forget(channel.id))
+    )
+    member.connect_to(None)
+
+    with caplog.at_level("INFO"):
+        await service.on_leave(member, channel)
+        await asyncio.gather(*gateway_events)
+
+    assert await service.store.get(channel.id) is None
+    assert "outside the bot" not in caplog.text

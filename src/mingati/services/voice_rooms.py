@@ -281,8 +281,10 @@ class VoiceRoomService:
         await self.store.set_panel_message(channel_id, message_id)
 
     async def forget(self, channel_id: int) -> None:
-        if await self.store.delete(channel_id):
-            log.info("Temporary voice room %s was deleted outside the bot", channel_id)
+        """Drop a room deleted by hand; waits for any deletion the bot itself is doing."""
+        async with self._lifecycle:
+            if await self.store.delete(channel_id):
+                log.info("Temporary voice room %s was deleted outside the bot", channel_id)
 
     async def reconcile(self, guild: discord.Guild) -> ReconcileReport:
         """Repair state after downtime: drop dead rooms, fix owners, serve waiting members."""

@@ -1,5 +1,6 @@
 import asyncio
 import itertools
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from types import SimpleNamespace
 from typing import Any
@@ -36,6 +37,7 @@ class FakeVoiceChannel:
     members: list["FakeMember"] = field(default_factory=list)
     deleted: bool = False
     fail_delete: bool = False
+    on_delete: Callable[[], object] | None = None
     id: int = field(default_factory=lambda: next(_ids))
 
     @property
@@ -53,6 +55,9 @@ class FakeVoiceChannel:
             raise http_error(discord.NotFound, 404)
         self.deleted = True
         self.guild.channels.pop(self.id, None)
+        if self.on_delete:
+            self.on_delete()
+        await asyncio.sleep(0)
 
 
 @dataclass(eq=False)

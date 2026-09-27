@@ -1,3 +1,4 @@
+import asyncio
 import re
 from typing import Any
 
@@ -55,15 +56,19 @@ class SteamProvider:
             "count": "50",
             "cc": self.country,
         }
-        games = []
-        for app_id in parse_steam_search(await fetch_json(http, STEAM_SEARCH_URL, search)):
-            details = {
-                "appids": app_id,
-                "cc": self.country,
-                "l": "french",
-                "filters": "basic,price_overview",
-            }
-            game = parse_steam_details(app_id, await fetch_json(http, STEAM_DETAILS_URL, details))
-            if game:
-                games.append(game)
-        return games
+        app_ids = parse_steam_search(await fetch_json(http, STEAM_SEARCH_URL, search))
+        details = await asyncio.gather(*(self._details(http, app_id) for app_id in app_ids))
+        games = (
+            parse_steam_details(app_id, payload)
+            for app_id, payload in zip(app_ids, details, strict=True)
+        )
+        return [game for game in games if game is not None]
+
+    async def _details(self, http: aiohttp.ClientSession, app_id: str) -> dict[str, Any]:
+        params = {
+            "appids": app_id,
+            "cc": self.country,
+            "l": "french",
+            "filters": "basic,price_overview",
+        }
+        return await fetch_json(http, STEAM_DETAILS_URL, params)

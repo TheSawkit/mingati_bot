@@ -1,13 +1,20 @@
+import asyncio
 import json
 from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
 
+from mingati.providers.games import steam
 from mingati.providers.games.base import FreeGame
 from mingati.providers.games.epic import parse_epic
 from mingati.providers.games.gog import giveaway_section_ids, parse_gog, parse_gog_giveaway
-from mingati.providers.games.steam import parse_steam_details, parse_steam_search
+from mingati.providers.games.steam import (
+    STEAM_SEARCH_URL,
+    SteamProvider,
+    parse_steam_details,
+    parse_steam_search,
+)
 from mingati.providers.http import ProviderError
 
 DATA = Path(__file__).parent / "data"
@@ -104,3 +111,24 @@ def test_gog_giveaway_without_a_usable_product_is_ignored() -> None:
     dlc = load("gog_giveaway_section.json")
     dlc["properties"]["product"]["productType"] = "dlc"
     assert parse_gog_giveaway(dlc, DURING_GIVEAWAY) is None
+
+
+async def test_steam_details_are_fetched_in_parallel(monkeypatch: pytest.MonkeyPatch) -> None:
+    in_flight, peak = 0, 0
+
+    async def fake_fetch_json(http, url, params=None, headers=None):
+        nonlocal in_flight, peak
+        if url == STEAM_SEARCH_URL:
+            return load("steam_search.json")
+        in_flight += 1
+        peak = max(peak, in_flight)
+        await asyncio.sleep(0.01)
+        in_flight -= 1
+        return load("steam_details.json")
+
+    monkeypatch.setattr(steam, "fetch_json", fake_fetch_json)
+
+    games = await SteamProvider("BE").fetch(http=None)
+
+    assert [game.external_id for game in games] == ["1091500"]
+    assert peak == 2

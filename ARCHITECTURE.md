@@ -198,7 +198,7 @@ Chaque provider (`GameProvider` : `name`, `label`, `fetch(http)`) appelle une so
 |---|---|---|
 | Epic | `freeGamesPromotions` | promotion en cours à `discountPercentage == 0` et prix remisé nul |
 | Steam | recherche `json=1&maxprice=free&specials=1&category1=998` puis `api/appdetails` | `type == game` et `discount_percent == 100` |
-| GOG | `catalog.gog.com/v1/catalog?price=between:0,0&discounted=eq:true` | prix final 0 et prix de base > 0 |
+| GOG | giveaways de la page d'accueil (`sections.gog.com/v1/pages/2f`, sections `GIVEAWAY_SECTION`) + `catalog.gog.com/v1/catalog?price=between:0,0&discounted=eq:true` | jeu du giveaway tant que sa date de fin n'est pas passée ; ou prix final 0 et prix de base > 0 |
 
 `providers/http.fetch_json` : timeout total 20 s, 3 tentatives sur erreur réseau ou 5xx, échec immédiat sur 4xx. Un payload inattendu lève `ProviderError`.
 
@@ -209,7 +209,6 @@ refresh (toutes les 2 h ou /freegames refresh)
  ├─ providers en parallèle (gather) ; une erreur = statut de la source, pas d'arrêt
  ├─ validation (titre, https, pas déjà terminé)
  ├─ INSERT OR IGNORE sur offer_key = source:id:fin   → déduplication
- │    première réussite d'une source : insérées comme déjà publiées (silencieux)
  │    offres sans date de fin disparues de la source : supprimées (ré-annonçables)
  ├─ publication des offres non publiées ; échec d'envoi = retenté au passage suivant
  └─ purge des offres terminées depuis plus de 30 jours

@@ -197,7 +197,7 @@ Tu dois voir `Synced … slash commands` puis `Connected as …`. `Ctrl+C` pour 
 Bon à savoir :
 
 - Un vocal temporaire s'efface quand il n'y a plus personne. Si son propriétaire part, un autre membre présent en hérite.
-- Les jeux gratuits sont vérifiés toutes les 2 heures. Au tout premier passage, ceux déjà gratuits sont enregistrés **sans annonce**, pour ne pas inonder le salon.
+- Les jeux gratuits sont vérifiés toutes les 2 heures, et `/freegames refresh` force une vérification immédiate. Chaque jeu gratuit est annoncé une fois, y compris ceux déjà gratuits au premier lancement. Sur GOG, les giveaways de la page d'accueil sont détectés.
 - Les cartes `/jouer` disparaissent à la fin de la session (3 h par défaut).
 
 ## 9. Mettre à jour et sauvegarder
@@ -241,7 +241,7 @@ Le jour de la bascule, sur la machine qui héberge la V1 :
 | Rien ne se passe en rejoignant « Créer un vocal » | Identifiant du salon absent ou faux | Vérifier `CHANNEL_CREATE_VOICE_*_ID` ; le log de démarrage signale un salon introuvable |
 | « Il me manque des permissions Discord » en verrouillant ou invitant | `Manage Roles` absent | Donner `Manage Roles` au rôle du bot, placé en bas de la liste |
 | Vocal créé mais membre pas déplacé | `Move Members` ou `Connect` absent sur la catégorie | Vérifier les permissions du rôle du bot sur la catégorie |
-| Aucun jeu gratuit annoncé | `CHANNEL_FREE_GAMES_ID` absent, ou premier passage silencieux | `/freegames status` et le log de démarrage |
+| Aucun jeu gratuit annoncé | `CHANNEL_FREE_GAMES_ID` absent, ou aucun jeu gratuit en ce moment (fréquent sur Steam et GOG) | `/freegames status` : chaque source indique combien de jeux elle a trouvés |
 | `/game-night` refusé | `Create Events` absent | Ajouter la permission au rôle du bot |
 | Le renommage d'un vocal échoue | Discord limite fortement les renommages de salon | Attendre quelques minutes |
 | Billy dit qu'il dort | `LLM_MODEL` ou la clé IA manquant | Remplir la section Billy de `.env` |

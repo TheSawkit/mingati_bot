@@ -131,7 +131,7 @@ Si la commande a des **boutons qui doivent survivre à un redémarrage**, crée 
 2. Ajoute-la à `default_game_providers()` (`src/mingati/providers/games/__init__.py`).
 3. Enregistre une **vraie réponse** de l'API, réduite à quelques éléments, dans `tests/data/`, et teste le parseur dessus (modèle : `tests/test_game_providers.py`).
 
-La déduplication, la validation, la publication et le premier passage silencieux sont gérés par `FreeGameService` : rien à refaire.
+La déduplication, la validation et la publication (avec reprise en cas d'échec d'envoi) sont gérées par `FreeGameService` : rien à refaire.
 
 ### Ajouter un jeu à `/server status`
 

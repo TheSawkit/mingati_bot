@@ -2,10 +2,18 @@ from pathlib import Path
 from typing import Literal
 from zoneinfo import ZoneInfo
 
-from pydantic import SecretStr
+from pydantic import SecretStr, ValidationError
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR"]
+
+
+def describe_config_error(error: ValidationError) -> str:
+    """Invalid fields and why, never their values: a value may be a token or an API key."""
+    return "\n".join(
+        f"- {'.'.join(map(str, item['loc'])) or 'config'} : {item['msg']}"
+        for item in error.errors(include_input=False, include_url=False)
+    )
 
 
 class Settings(BaseSettings):

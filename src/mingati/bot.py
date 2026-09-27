@@ -97,6 +97,9 @@ class MingatiBot(commands.Bot):
             await self.http_session.close()
         await super().close()
 
+    async def on_message(self, message: discord.Message, /) -> None:
+        """Slash commands only: text messages are never parsed as prefix commands."""
+
     async def on_ready(self) -> None:
         log.info("Connected as %s", self.user)
         if self.get_guild(self.settings.discord_guild_id) is None:

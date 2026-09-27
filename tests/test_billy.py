@@ -73,18 +73,18 @@ async def test_answer_uses_the_persona_and_trims_long_replies() -> None:
     billy = BillyService(ai, None)
 
     question = billy.prepare_question(1, "  Ça   va ? ", NOW)
-    reply = await billy.answer(HTTP, question)
+    reply = await billy.answer(HTTP, question, "Tom")
 
     assert question == "Ça va ?"
     assert len(reply) == MAX_REPLY_LENGTH
     assert ai.prompts[0][0] == ChatMessage("system", BILLY_PERSONA)
-    assert ai.prompts[0][1] == ChatMessage("user", "Ça va ?")
+    assert ai.prompts[0][1] == ChatMessage("user", "Tom : Ça va ?")
 
 
 async def test_answer_falls_back_in_character_when_the_ai_fails() -> None:
     billy = BillyService(FakeAI(replies=[ProviderError("429")]), None)
 
-    assert await billy.answer(HTTP, "salut") == FALLBACK_REPLY
+    assert await billy.answer(HTTP, "salut", "Tom") == FALLBACK_REPLY
 
 
 @pytest.mark.parametrize("question", ["", "   ", "x" * 501])
@@ -152,3 +152,11 @@ def test_joke_provider_needs_a_token() -> None:
 
     assert create_joke_provider(settings) is None
     assert create_joke_provider(settings.model_copy(update={"blagues_api_token": SecretStr("x")}))
+
+
+async def test_ai_joke_keeps_the_last_two_lines_when_billy_adds_a_remark() -> None:
+    billy = BillyService(
+        FakeAI(replies=["ouais ok frr\n\nPourquoi les poissons ?\nParce que."]), None
+    )
+
+    assert await billy.joke(HTTP) == Joke("Pourquoi les poissons ?", "Parce que.")

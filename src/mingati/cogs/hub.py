@@ -83,7 +83,9 @@ class Hub(commands.Cog):
         if self.bot.http_session is None:
             raise UserFacingError("Je me réveille à peine, réessaie dans un instant...")
         await interaction.response.defer(ephemeral=True, thinking=True)
-        reply = await self.bot.billy.answer(self.bot.http_session, cleaned)
+        reply = await self.bot.billy.answer(
+            self.bot.http_session, cleaned, interaction.user.display_name
+        )
         await interaction.followup.send(f"> {cleaned}\n{reply}", ephemeral=True)
 
     async def _existing_hub(self, guild_id: int) -> discord.Message | None:

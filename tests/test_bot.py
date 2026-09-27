@@ -92,3 +92,31 @@ async def test_cogs_register_expected_commands_and_persistent_views(tmp_path: Pa
         }
         assert len(bot.persistent_views) == 3
         assert all(view.is_persistent() for view in bot.persistent_views)
+
+
+async def test_mentions_are_never_parsed_as_text_commands(tmp_path: Path) -> None:
+    bot = MingatiBot(
+        Settings(discord_token="t", discord_guild_id=1, billy_mentions_enabled=True),
+        Database(tmp_path / "db.sqlite"),
+        LastErrorHandler(),
+    )
+    processed: list[object] = []
+
+    async def record(message: object) -> None:
+        processed.append(message)
+
+    bot.process_commands = record
+    await bot.on_message(SimpleNamespace(content="<@1> salut ça va"))
+
+    assert processed == []
+
+
+async def test_billy_mention_listener_still_receives_messages(tmp_path: Path) -> None:
+    settings = Settings(discord_token="t", discord_guild_id=1, billy_mentions_enabled=True)
+    bot = MingatiBot(settings, Database(tmp_path / "db.sqlite"), LastErrorHandler())
+    async with bot:
+        for extension in EXTENSIONS:
+            await bot.load_extension(extension)
+
+        listeners = [listener.__name__ for listener in bot.extra_events.get("on_message", [])]
+        assert "on_mention" in listeners

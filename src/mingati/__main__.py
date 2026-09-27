@@ -7,7 +7,7 @@ import discord
 from pydantic import ValidationError
 
 from mingati.bot import MingatiBot
-from mingati.config import Settings
+from mingati.config import Settings, describe_config_error
 from mingati.database import Database
 from mingati.utils.logging import LastErrorHandler, setup_logging
 
@@ -34,7 +34,9 @@ def main() -> None:
         settings = Settings()
     except ValidationError as error:
         setup_logging("INFO")
-        log.critical("Invalid configuration, check your .env file:\n%s", error)
+        log.critical(
+            "Invalid configuration, check your .env file:\n%s", describe_config_error(error)
+        )
         sys.exit(1)
     last_error = setup_logging(settings.log_level)
     try:

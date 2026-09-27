@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Iterable
 from datetime import UTC, datetime, timedelta
 
 import discord
@@ -9,9 +10,28 @@ from discord.ext import commands
 
 from mingati import __version__
 from mingati.bot import MingatiBot
+from mingati.providers.ai import AIProvider
+from mingati.providers.jokes import BlaguesApiProvider
 from mingati.utils.permissions import staff_only
 
 log = logging.getLogger(__name__)
+
+
+def describe_providers(
+    ai: AIProvider | None,
+    jokes: BlaguesApiProvider | None,
+    game_sources: Iterable[str],
+    server_kinds: Iterable[str],
+) -> str:
+    """One line per external dependency, so staff see what is configured at a glance."""
+    return "\n".join(
+        [
+            f"IA : {ai.name} · `{ai.model}`" if ai else "IA : désactivée",
+            "Blagues : blagues-api.fr" if jokes else "Blagues : secours (IA / liste)",
+            f"Jeux gratuits : {', '.join(game_sources) or 'aucun'}",
+            f"Serveurs : {', '.join(server_kinds) or 'aucun'}",
+        ]
+    )
 
 
 def format_uptime(delta: timedelta) -> str:
@@ -43,6 +63,16 @@ class Core(commands.Cog):
         embed.add_field(name="Latence Discord", value=f"{self.bot.latency * 1000:.0f} ms")
         embed.add_field(name="SQLite", value=await self._database_status(), inline=False)
         embed.add_field(name="Jeux gratuits", value=await self._free_games_status(), inline=False)
+        embed.add_field(
+            name="Providers",
+            value=describe_providers(
+                self.bot.billy.ai,
+                self.bot.billy.jokes,
+                (provider.label for provider in self.bot.free_games.providers),
+                (provider.label for provider in self.bot.game_servers.providers.values()),
+            ),
+            inline=False,
+        )
         embed.add_field(name="Dernière erreur", value=self._last_error(), inline=False)
         await interaction.response.send_message(embed=embed, ephemeral=True)
 

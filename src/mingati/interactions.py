@@ -11,6 +11,7 @@ log = logging.getLogger(__name__)
 GENERIC_ERROR = (
     "Oups, quelque chose a planté de mon côté. Le staff peut voir le détail dans les logs."
 )
+UNKNOWN_INTERACTION = 10062
 MISSING_PERMISSIONS = "Il me manque des permissions Discord pour faire ça. Préviens le staff."
 
 
@@ -38,10 +39,22 @@ async def reply_ephemeral(interaction: discord.Interaction, content: str) -> Non
         await interaction.response.send_message(content, ephemeral=True)
 
 
+def is_expired_interaction(error: BaseException) -> bool:
+    """Discord dropped the interaction because it was not acknowledged within 3 seconds."""
+    return isinstance(error, discord.NotFound) and error.code == UNKNOWN_INTERACTION
+
+
 async def report_error(interaction: discord.Interaction, error: Exception, source: str) -> None:
     """Log unexpected errors and always give the user an understandable answer."""
     message = describe_error(error)
     original = getattr(error, "original", error)
+    if is_expired_interaction(original):
+        log.warning(
+            "Interaction %s expired before the bot answered (Discord allows 3 s): "
+            "check network latency and container DNS resolution",
+            source,
+        )
+        return
     if message is None:
         log.error("Unhandled error in %s", source, exc_info=error)
         message = GENERIC_ERROR

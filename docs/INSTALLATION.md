@@ -198,6 +198,7 @@ Bon à savoir :
 
 - Un vocal temporaire s'efface quand il n'y a plus personne. Si son propriétaire part, un autre membre présent en hérite.
 - Les jeux gratuits sont vérifiés toutes les 2 heures, et `/freegames refresh` force une vérification immédiate. Chaque jeu gratuit est annoncé une fois, y compris ceux déjà gratuits au premier lancement. Sur GOG, les giveaways de la page d'accueil sont détectés.
+- Chaque annonce reprend le logo et la couleur de sa boutique. Le bot utilise les emojis du serveur nommés `epic_games`, `steam` et `gog` s'ils existent (sinon un emoji standard) : il les retrouve par leur nom, donc tu peux changer leur image sans toucher au bot. Après avoir renommé un emoji, redémarre le bot.
 - Les cartes `/jouer` disparaissent à la fin de la session (3 h par défaut).
 
 ## 9. Mettre à jour et sauvegarder

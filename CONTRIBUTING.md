@@ -129,6 +129,7 @@ Si la commande a des **boutons qui doivent survivre à un redémarrage**, crée 
    - une fonction **pure** `parse_ma_boutique(payload) -> list[FreeGame]`, qui lève `ProviderError` si la réponse n'a pas la forme attendue ;
    - une classe avec `name`, `label` et `async def fetch(self, http) -> list[FreeGame]`, qui appelle `fetch_json` puis le parseur.
 2. Ajoute-la à `default_game_providers()` (`src/mingati/providers/games/__init__.py`).
+   Ajoute aussi son style (nom affiché, couleur, nom de l'emoji du serveur) dans `PLATFORMS` (`src/mingati/views/free_games.py`) : chaque boutique a ses annonces reconnaissables.
 3. Enregistre une **vraie réponse** de l'API, réduite à quelques éléments, dans `tests/data/`, et teste le parseur dessus (modèle : `tests/test_game_providers.py`).
 
 La déduplication, la validation et la publication (avec reprise en cas d'échec d'envoi) sont gérées par `FreeGameService` : rien à refaire.

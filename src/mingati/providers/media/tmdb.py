@@ -184,9 +184,7 @@ def _parse_details(data: dict[str, Any], media_type: MediaType) -> MediaDetails:
 
 def _parse_collection(data: dict[str, Any]) -> CollectionDetails:
     films = tuple(
-        _search_result(item, MediaType.MOVIE)
-        for item in data.get("parts") or []
-        if item.get("id")
+        _search_result(item, MediaType.MOVIE) for item in data.get("parts") or [] if item.get("id")
     )
     return CollectionDetails(
         id=int(data["id"]),

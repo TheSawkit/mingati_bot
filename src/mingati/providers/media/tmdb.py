@@ -338,7 +338,8 @@ class TMDBProvider:
             self._get(http, "/search/multi", {**common, "region": self.region}),
             self._get(http, "/search/collection", common),
         )
-        return (_parse_multi_search(multi_payload) + _parse_collection_search(collection_payload))[:25]
+        results = _parse_multi_search(multi_payload) + _parse_collection_search(collection_payload)
+        return results[:25]
 
     async def details(
         self,

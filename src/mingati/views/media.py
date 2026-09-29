@@ -158,14 +158,9 @@ def build_sources_embed(
     providers: Sequence[WatchProvider],
 ) -> discord.Embed:
     lines = [
-        f"• 🔗 [{provider.name}]({provider.link}) — {provider.category}"
-        for provider in providers
+        f"• 🔗 [{provider.name}]({provider.link}) — {provider.category}" for provider in providers
     ]
-    description = (
-        "\\n".join(lines)
-        if lines
-        else "Aucun service de visionnage trouvé pour la Belgique."
-    )
+    description = "\\n".join(lines) if lines else "Aucun service de visionnage trouvé pour la Belgique."
     return discord.Embed(
         title=f"📺 Où regarder {media.title} ?",
         url=media.tmdb_url,

@@ -46,6 +46,10 @@ class Settings(BaseSettings):
     groq_api_key: SecretStr | None = None
     blagues_api_token: SecretStr | None = None
 
+    tmdb_api_token: SecretStr | None = None
+    tmdb_language: str = "fr-BE"
+    tmdb_region: str = "BE"
+
     billy_mentions_enabled: bool = False
     welcome_enabled: bool = False
     presence_enabled: bool = False

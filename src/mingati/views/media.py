@@ -330,9 +330,7 @@ class WatchView(MingatiView):
         if not self.media or not self.media.collection_id:
             return
         await interaction.response.defer()
-        self.show_collection(
-            await self.service.collection(self.http, self.media.collection_id)
-        )
+        self.show_collection(await self.service.collection(self.http, self.media.collection_id))
         await interaction.edit_original_response(embed=self.embed, view=self)
 
     async def open_seasons(self, interaction: discord.Interaction) -> None:
@@ -364,9 +362,7 @@ class WatchView(MingatiView):
         if not self.media:
             return
         await interaction.response.defer()
-        self.show_sources(
-            await self.service.providers(self.http, self.media)
-        )
+        self.show_sources(await self.service.providers(self.http, self.media))
         await interaction.edit_original_response(embed=self.embed, view=self)
 
     async def back_from_sources(self, interaction: discord.Interaction) -> None:
@@ -399,9 +395,7 @@ class WatchView(MingatiView):
     async def new_search(self, interaction: discord.Interaction) -> None:
         if not await self._check(interaction):
             return
-        await interaction.response.send_modal(
-            WatchModal(self.service, self.http, self.owner_id)
-        )
+        await interaction.response.send_modal(WatchModal(self.service, self.http, self.owner_id))
 
 
 class MediaSelect(discord.ui.Select):
@@ -409,9 +403,7 @@ class MediaSelect(discord.ui.Select):
         options = [
             discord.SelectOption(
                 label=result.title[:100],
-                description=(
-                    f"{result.year or '?'} · {_type_label(result.media_type)}"
-                )[:100],
+                description=(f"{result.year or '?'} · {_type_label(result.media_type)}")[:100],
                 value=str(index),
             )
             for index, result in enumerate(view.results)

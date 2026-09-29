@@ -7,6 +7,7 @@ from mingati.providers.media.tmdb import (
     CollectionDetails,
     MediaDetails,
     MediaSearchResult,
+    MediaType,
     SeasonDetails,
     TMDBProvider,
     WatchProvider,
@@ -14,12 +15,12 @@ from mingati.providers.media.tmdb import (
 
 
 class MediaService:
-    """Business orchestration for movie and TV lookup."""
+    """Application service: validates input and delegates to the configured provider."""
 
     def __init__(self, provider: TMDBProvider | None) -> None:
         self.provider = provider
 
-    def _require_provider(self) -> TMDBProvider:
+    def _provider(self) -> TMDBProvider:
         if self.provider is None:
             raise UserFacingError(
                 "La recherche de films/séries n'est pas configurée. "
@@ -27,28 +28,25 @@ class MediaService:
             )
         return self.provider
 
-    async def search(
-        self,
-        http: aiohttp.ClientSession,
-        query: str,
-    ) -> list[MediaSearchResult]:
-        if len(query.strip()) < 2:
+    async def search(self, http: aiohttp.ClientSession, query: str) -> list[MediaSearchResult]:
+        query = query.strip()
+        if len(query) < 2:
             raise UserFacingError("Donne-moi au moins 2 caractères pour la recherche.")
-        return await self._require_provider().search(http, query)
+        return await self._provider().search(http, query)
 
     async def details(
         self,
         http: aiohttp.ClientSession,
         result: MediaSearchResult,
     ) -> MediaDetails:
-        return await self._require_provider().details(http, result.media_type, result.id)
+        return await self._provider().details(http, result.media_type, result.id)
 
     async def collection(
         self,
         http: aiohttp.ClientSession,
         collection_id: int,
     ) -> CollectionDetails:
-        return await self._require_provider().collection(http, collection_id)
+        return await self._provider().collection(http, collection_id)
 
     async def season(
         self,
@@ -56,11 +54,13 @@ class MediaService:
         series_id: int,
         season_number: int,
     ) -> SeasonDetails:
-        return await self._require_provider().season(http, series_id, season_number)
+        if season_number < 1:
+            raise UserFacingError("Cette saison n'existe pas.")
+        return await self._provider().season(http, series_id, season_number)
 
     async def providers(
         self,
         http: aiohttp.ClientSession,
         media: MediaDetails,
     ) -> list[WatchProvider]:
-        return await self._require_provider().providers(http, media.media_type, media.id)
+        return await self._provider().providers(http, media.media_type, media.id)

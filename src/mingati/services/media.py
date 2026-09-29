@@ -7,7 +7,6 @@ from mingati.providers.media.tmdb import (
     CollectionDetails,
     MediaDetails,
     MediaSearchResult,
-    MediaType,
     SeasonDetails,
     TMDBProvider,
     WatchProvider,

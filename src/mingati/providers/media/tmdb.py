@@ -160,23 +160,15 @@ def _parse_details(data: dict[str, Any], media_type: MediaType) -> MediaDetails:
         runtime_minutes=_runtime(data, media_type),
         poster_url=image_url(data.get("poster_path")),
         backdrop_url=image_url(data.get("backdrop_path")),
-        genres=tuple(
-            str(genre["name"])
-            for genre in data.get("genres") or []
-            if genre.get("name")
-        ),
+        genres=tuple(str(genre["name"]) for genre in data.get("genres") or [] if genre.get("name")),
         rating=float(data["vote_average"]) if data.get("vote_average") is not None else None,
         collection_id=int(collection["id"]) if collection.get("id") else None,
         collection_name=str(collection["name"]) if collection.get("name") else None,
         seasons=(
-            int(data["number_of_seasons"])
-            if data.get("number_of_seasons") is not None
-            else None
+            int(data["number_of_seasons"]) if data.get("number_of_seasons") is not None else None
         ),
         episodes=(
-            int(data["number_of_episodes"])
-            if data.get("number_of_episodes") is not None
-            else None
+            int(data["number_of_episodes"]) if data.get("number_of_episodes") is not None else None
         ),
         tmdb_url=f"https://www.themoviedb.org/{media_type.value}/{int(data['id'])}",
     )

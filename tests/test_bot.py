@@ -9,7 +9,6 @@ from mingati.config import Settings
 from mingati.database import Database
 from mingati.errors import UserFacingError
 from mingati.interactions import describe_error
-from mingati.utils.logging import LastErrorHandler
 from mingati.utils.permissions import has_any_role
 
 
@@ -89,6 +88,7 @@ async def test_cogs_register_expected_commands_and_persistent_views(tmp_path: Pa
             "random-game": [],
             "game-night": [],
             "server": ["add", "remove", "status"],
+            "watch": [],
         }
         assert len(bot.persistent_views) == 3
         assert all(view.is_persistent() for view in bot.persistent_views)

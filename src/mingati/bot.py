@@ -13,11 +13,13 @@ from mingati.providers.ai import create_ai_provider
 from mingati.providers.games import default_game_providers
 from mingati.providers.http import create_http_session
 from mingati.providers.jokes import create_joke_provider
+from mingati.providers.media.tmdb import TMDBProvider
 from mingati.providers.servers import default_server_providers
 from mingati.services.billy import BillyService
 from mingati.services.free_games import FreeGameService
 from mingati.services.game_servers import GameServerService
 from mingati.services.gaming_sessions import GamingSessionService
+from mingati.services.media import MediaService
 from mingati.services.voice_rooms import VoiceRoomService, VoiceRoomStore
 from mingati.utils.logging import LastErrorHandler
 
@@ -34,6 +36,7 @@ EXTENSIONS = (
     "mingati.cogs.game_night",
     "mingati.cogs.servers",
     "mingati.cogs.presence",
+    "mingati.cogs.media",
 )
 
 
@@ -77,6 +80,16 @@ class MingatiBot(commands.Bot):
         self.free_games = FreeGameService(database, default_game_providers(settings.store_country))
         self.billy = BillyService(create_ai_provider(settings), create_joke_provider(settings))
         self.game_servers = GameServerService(database, default_server_providers())
+        self.tmdb = (
+            TMDBProvider(
+                settings.tmdb_api_token.get_secret_value(),
+                language=settings.tmdb_language,
+                region=settings.tmdb_region,
+            )
+            if settings.tmdb_api_token
+            else None
+        )
+        self.media = MediaService(self.tmdb)
         self.http_session: aiohttp.ClientSession | None = None
         self.started_at = datetime.now(UTC)
 

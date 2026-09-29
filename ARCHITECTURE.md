@@ -248,10 +248,10 @@ refresh (toutes les 2 h ou /freegames refresh)
 ```text
 /watch
  └─ WatchModal → MediaService.search
-                ├─ TMDB /search/multi
-                └─ TMDB /search/collection
-                         ↓
-                   sélection utilisateur
+                       ↓
+                  TMDB /search/multi
+                       ↓
+                 sélection utilisateur
                          ↓
                  MediaService.details
                          ↓
@@ -262,12 +262,12 @@ refresh (toutes les 2 h ou /freegames refresh)
                               ↓
                            Épisodes
                          ↓
-              MediaService.providers
+                 sources de visionnage
                          ↓
-             TMDB Watch Providers
+                TMDB Watch Providers
                   (JustWatch)
                          ↓
-                 liste de liens
+                  liste de liens
 ```
 
 La commande n'est disponible que sur le serveur. La recherche et les interactions restent éphémères et appartiennent à l'utilisateur qui les a lancées. Aucune table SQLite n'est nécessaire en V1.

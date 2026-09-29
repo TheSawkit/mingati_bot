@@ -290,7 +290,7 @@ class TMDBProvider:
             http,
             "/search/multi",
             {
-                "query": query.strip(),
+                "query": query,
                 "language": self.language,
                 "include_adult": "false",
                 "page": "1",

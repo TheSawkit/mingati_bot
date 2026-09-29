@@ -194,9 +194,10 @@ class WatchModal(MingatiModal, title="Chercher un film ou une série"):
         self.owner_id = owner_id
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
+        await interaction.response.defer(ephemeral=True, thinking=True)
         results = await self.service.search(self.http, str(self.query))
         if not results:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"Aucun résultat pour « {self.query} ».",
                 ephemeral=True,
             )
@@ -204,7 +205,7 @@ class WatchModal(MingatiModal, title="Chercher un film ou une série"):
 
         view = WatchView(self.service, self.http, self.owner_id)
         view.show_search(str(self.query), results)
-        await interaction.response.send_message(
+        await interaction.followup.send(
             embed=view.embed,
             view=view,
             ephemeral=True,
@@ -230,7 +231,6 @@ class WatchView(MingatiView):
         self.collection: CollectionDetails | None = None
         self.season: SeasonDetails | None = None
         self.episode: Episode | None = None
-        self.previous_media: MediaDetails | None = None
 
     def show_search(
         self,
@@ -242,7 +242,6 @@ class WatchView(MingatiView):
         self.collection = None
         self.season = None
         self.episode = None
-        self.previous_media = None
         self.clear_items()
         self.add_item(MediaSelect(self))
         self.embed = build_search_embed(query, self.results)
@@ -263,8 +262,9 @@ class WatchView(MingatiView):
 
     def show_collection(self, collection: CollectionDetails) -> None:
         self.collection = collection
+        self.results = list(collection.films[:MAX_RESULTS])
         self.clear_items()
-        if collection.films:
+        if self.results:
             self.add_item(CollectionSelect(self))
         self._add_button("↩️ Retour", self.back_to_details)
         self.embed = build_collection_embed(collection)

@@ -21,7 +21,7 @@ Comment Mingati Bot est construit, et pourquoi. Pour ajouter une fonctionnalité
                │                 │
                ▼                 ▼
         database.py         providers/ ──► Epic, Steam, GOG, Groq/Gemini,
-        (SQLite, WAL)        (HTTP 20 s)    blagues-api.fr, Minecraft
+        (SQLite, WAL)        (HTTP 20 s)    blagues-api.fr, Minecraft, TMDB/JustWatch
 ```
 
 Un processus unique, une base SQLite locale (`data/mingati.db`), aucun service externe obligatoire : sans clés d'API, les fonctions qui en dépendent se désactivent proprement et le reste fonctionne.
@@ -46,25 +46,29 @@ src/mingati/
 ├── cogs/              commandes et événements Discord (fins)
 │   ├── core.py        /bot status
 │   ├── voice.py       événements vocaux + /vocal
-│   └── gaming.py      /jouer, boutons des cartes, expiration
+│   ├── gaming.py      /jouer, boutons des cartes, expiration
+│   └── media.py       /watch, recherche et navigation film/série
 ├── services/
 │   ├── voice_rooms.py     VoiceRoomService (cycle de vie, contrôles) + VoiceRoomStore (SQLite)
 │   ├── gaming_sessions.py GamingSessionService + validation /jouer (fonctions pures)
 │   ├── session_voice.py   règles « Créer le vocal » d'une session (inscrits seulement, réutilisation)
 │   ├── free_games.py      pipeline jeux gratuits (validation, déduplication, publication)
+│   ├── media.py            orchestration films/séries → TMDB + disponibilités
 │   ├── billy.py           personnalité, limites d'usage, secours pour chaque réponse
 │   ├── guild_config.py    état clé/valeur par serveur (position du hub)
 │   └── game_servers.py    serveurs suivis + statut en parallèle
 ├── providers/
 │   ├── http.py            client aiohttp partagé : timeout, retries
 │   ├── games/             EpicProvider, SteamProvider, GogProvider → FreeGame
+│   ├── media/             TMDBProvider → metadata + disponibilités par région
 │   ├── ai/                AIProvider + OpenAICompatibleProvider (Gemini, Groq…)
 │   ├── jokes.py           blagues-api.fr
 │   └── servers/           ServerProvider + MinecraftJavaProvider (mcstatus)
 ├── interactions.py    erreurs communes slash/boutons/modals, MingatiView, MingatiModal
 ├── views/
 │   ├── voice.py       panneau persistant, modals, sélecteurs
-│   └── gaming.py      carte de session + boutons persistants
+│   ├── gaming.py      carte de session + boutons persistants
+│   └── media.py       recherche, fiches, sagas, saisons et épisodes
 └── utils/
     ├── logging.py     configuration des logs + mémoire de la dernière erreur
     └── permissions.py check staff
@@ -236,6 +240,39 @@ refresh (toutes les 2 h ou /freegames refresh)
 ## Hub
 
 `/mingati` (staff) publie un embed + `HubView` persistante (`mingati:hub:*`). La position du message est stockée dans `guild_config` (`hub_channel_id`, `hub_message_id`) : relancer la commande édite le message existant au lieu d'en créer un. Les boutons ne font que lire les services existants (`gaming_sessions.list_open`, `free_games.active`, `billy`) et répondent en éphémère.
+
+## Films et séries
+
+### Flux
+
+```text
+/watch
+ └─ WatchModal → MediaService.search
+                       ↓
+                  TMDB /search/multi
+                       ↓
+                 sélection utilisateur
+                         ↓
+                 MediaService.details
+                         ↓
+                 fiche film / série
+                    ┌────┴────┐
+                    ▼         ▼
+                  Saga     Saisons
+                              ↓
+                           Épisodes
+                         ↓
+                 sources de visionnage
+                         ↓
+                TMDB Watch Providers
+                  (JustWatch)
+                         ↓
+                  liste de liens
+```
+
+La commande n'est disponible que sur le serveur. La recherche et les interactions restent éphémères et appartiennent à l'utilisateur qui les a lancées. Aucune table SQLite n'est nécessaire en V1.
+
+TMDB fournit les métadonnées et les disponibilités par pays ; son endpoint Watch Providers ne fournit pas un deep-link individuel par service, mais une URL permettant d'accéder à la disponibilité du titre. L'utilisation de ces données de disponibilité nécessite l'attribution JustWatch.
 
 ## Game night et fun
 

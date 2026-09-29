@@ -37,6 +37,10 @@ Les autres cliquent pour rejoindre, et un bouton ouvre un vocal réservé aux jo
 
 Le bot surveille **Epic Games, Steam et GOG** et poste chaque nouveau jeu offert, avec son image et sa date de fin. Chaque jeu n'est annoncé qu'une seule fois.
 
+### 🎬 Films et séries
+
+`/watch` ouvre une recherche interactive : choix du film/série ou de la saga, fiche TMDB, saisons/épisodes pour les séries, puis disponibilités de visionnage en Belgique.
+
 ### 🤖 Billy, le souffre-douleur
 
 Billy est anxieux et maladroit… mais il a de la répartie. Insulte-le avec `/billy`, il te renvoie la vanne en te visant par ton pseudo. Il peut aussi raconter une blague (`/blague`) et souhaiter la bienvenue aux nouveaux.
@@ -52,6 +56,7 @@ Billy est anxieux et maladroit… mais il a de la répartie. Insulte-le avec `/b
 | `/dé` `/coinflip` `/8ball` `/roulette` `/random-game` | Petits jeux : lancer de dés, pile ou face, boule magique, roulette russe, tirage au sort du jeu du soir |
 | `/server status` | Est-ce que notre serveur Minecraft est en ligne ? Combien de joueurs ? |
 | `/en-jeu` | Qui joue à quoi en ce moment (option à activer) |
+| `/watch` | Recherche un film ou une série, affiche ses infos TMDB et les services de visionnage référencés pour la Belgique |
 
 La liste complète des commandes est dans le [guide d'installation](docs/INSTALLATION.md#8-les-commandes).
 

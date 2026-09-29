@@ -46,7 +46,8 @@ src/mingati/
 ├── cogs/              commandes et événements Discord (fins)
 │   ├── core.py        /bot status
 │   ├── voice.py       événements vocaux + /vocal
-│   └── gaming.py      /jouer, boutons des cartes, expiration
+│   ├── gaming.py      /jouer, boutons des cartes, expiration
+│   └── media.py       /watch, recherche et navigation film/série
 ├── services/
 │   ├── voice_rooms.py     VoiceRoomService (cycle de vie, contrôles) + VoiceRoomStore (SQLite)
 │   ├── gaming_sessions.py GamingSessionService + validation /jouer (fonctions pures)
@@ -59,13 +60,15 @@ src/mingati/
 ├── providers/
 │   ├── http.py            client aiohttp partagé : timeout, retries
 │   ├── games/             EpicProvider, SteamProvider, GogProvider → FreeGame
+│   ├── media/             TMDBProvider → metadata + disponibilités par région
 │   ├── ai/                AIProvider + OpenAICompatibleProvider (Gemini, Groq…)
 │   ├── jokes.py           blagues-api.fr
 │   └── servers/           ServerProvider + MinecraftJavaProvider (mcstatus)
 ├── interactions.py    erreurs communes slash/boutons/modals, MingatiView, MingatiModal
 ├── views/
 │   ├── voice.py       panneau persistant, modals, sélecteurs
-│   └── gaming.py      carte de session + boutons persistants
+│   ├── gaming.py      carte de session + boutons persistants
+│   └── media.py       recherche, fiches, sagas, saisons et épisodes
 └── utils/
     ├── logging.py     configuration des logs + mémoire de la dernière erreur
     └── permissions.py check staff

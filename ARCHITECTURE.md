@@ -21,7 +21,7 @@ Comment Mingati Bot est construit, et pourquoi. Pour ajouter une fonctionnalité
                │                 │
                ▼                 ▼
         database.py         providers/ ──► Epic, Steam, GOG, Groq/Gemini,
-        (SQLite, WAL)        (HTTP 20 s)    blagues-api.fr, Minecraft
+        (SQLite, WAL)        (HTTP 20 s)    blagues-api.fr, Minecraft, TMDB/JustWatch
 ```
 
 Un processus unique, une base SQLite locale (`data/mingati.db`), aucun service externe obligatoire : sans clés d'API, les fonctions qui en dépendent se désactivent proprement et le reste fonctionne.
@@ -52,6 +52,7 @@ src/mingati/
 │   ├── gaming_sessions.py GamingSessionService + validation /jouer (fonctions pures)
 │   ├── session_voice.py   règles « Créer le vocal » d'une session (inscrits seulement, réutilisation)
 │   ├── free_games.py      pipeline jeux gratuits (validation, déduplication, publication)
+│   ├── media.py            orchestration films/séries → TMDB + disponibilités
 │   ├── billy.py           personnalité, limites d'usage, secours pour chaque réponse
 │   ├── guild_config.py    état clé/valeur par serveur (position du hub)
 │   └── game_servers.py    serveurs suivis + statut en parallèle
@@ -236,6 +237,39 @@ refresh (toutes les 2 h ou /freegames refresh)
 ## Hub
 
 `/mingati` (staff) publie un embed + `HubView` persistante (`mingati:hub:*`). La position du message est stockée dans `guild_config` (`hub_channel_id`, `hub_message_id`) : relancer la commande édite le message existant au lieu d'en créer un. Les boutons ne font que lire les services existants (`gaming_sessions.list_open`, `free_games.active`, `billy`) et répondent en éphémère.
+
+## Films et séries
+
+### Flux
+
+```text
+/watch
+ └─ WatchModal → MediaService.search
+                ├─ TMDB /search/multi
+                └─ TMDB /search/collection
+                         ↓
+                   sélection utilisateur
+                         ↓
+                 MediaService.details
+                         ↓
+                 fiche film / série
+                    ┌────┴────┐
+                    ▼         ▼
+                  Saga     Saisons
+                              ↓
+                           Épisodes
+                         ↓
+              MediaService.providers
+                         ↓
+             TMDB Watch Providers
+                  (JustWatch)
+                         ↓
+                 liste de liens
+```
+
+La commande n'est disponible que sur le serveur. La recherche et les interactions restent éphémères et appartiennent à l'utilisateur qui les a lancées. Aucune table SQLite n'est nécessaire en V1.
+
+TMDB fournit les métadonnées et les disponibilités par pays ; son endpoint Watch Providers ne fournit pas un deep-link individuel par service, mais une URL permettant d'accéder à la disponibilité du titre. L'utilisation de ces données de disponibilité nécessite l'attribution JustWatch.
 
 ## Game night et fun
 

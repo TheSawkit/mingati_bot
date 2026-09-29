@@ -56,7 +56,7 @@ Billy est anxieux et maladroit… mais il a de la répartie. Insulte-le avec `/b
 | `/dé` `/coinflip` `/8ball` `/roulette` `/random-game` | Petits jeux : lancer de dés, pile ou face, boule magique, roulette russe, tirage au sort du jeu du soir |
 | `/server status` | Est-ce que notre serveur Minecraft est en ligne ? Combien de joueurs ? |
 | `/en-jeu` | Qui joue à quoi en ce moment (option à activer) |
-| `/watch` | Recherche un film ou une série, affiche ses infos TMDB et les services de visionnage disponibles en Belgique |
+| `/watch` | Recherche un film ou une série, affiche ses infos TMDB et les services de visionnage référencés pour la Belgique |
 
 La liste complète des commandes est dans le [guide d'installation](docs/INSTALLATION.md#8-les-commandes).
 

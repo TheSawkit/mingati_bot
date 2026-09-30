@@ -24,6 +24,32 @@ MAX_RESULTS = 25
 VIEW_TIMEOUT = 10 * 60
 
 
+async def send_watch_search(
+    interaction: discord.Interaction,
+    service: MediaService,
+    http: ClientSession,
+    owner_id: int,
+    query: str,
+) -> None:
+    query = query.strip()
+    await interaction.response.defer(ephemeral=True, thinking=True)
+    results = await service.search(http, query)
+    if not results:
+        await interaction.followup.send(
+            f"Aucun résultat pour « {query} ».",
+            ephemeral=True,
+        )
+        return
+
+    view = WatchView(service, http, owner_id)
+    view.show_search(query, results)
+    await interaction.followup.send(
+        embed=view.embed,
+        view=view,
+        ephemeral=True,
+    )
+
+
 def _type_label(media_type: MediaType) -> str:
     return "Film" if media_type == MediaType.MOVIE else "Série"
 
@@ -191,21 +217,12 @@ class WatchModal(MingatiModal, title="Chercher un film ou une série"):
         self.owner_id = owner_id
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
-        await interaction.response.defer(ephemeral=True, thinking=True)
-        results = await self.service.search(self.http, str(self.query))
-        if not results:
-            await interaction.followup.send(
-                f"Aucun résultat pour « {self.query} ».",
-                ephemeral=True,
-            )
-            return
-
-        view = WatchView(self.service, self.http, self.owner_id)
-        view.show_search(str(self.query), results)
-        await interaction.followup.send(
-            embed=view.embed,
-            view=view,
-            ephemeral=True,
+        await send_watch_search(
+            interaction,
+            self.service,
+            self.http,
+            self.owner_id,
+            str(self.query),
         )
 
 

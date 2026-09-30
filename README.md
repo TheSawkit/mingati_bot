@@ -39,7 +39,7 @@ Le bot surveille **Epic Games, Steam et GOG** et poste chaque nouveau jeu offert
 
 ### 🎬 Films et séries
 
-`/watch film:NomDuFilm` recherche directement un film ou une série, puis permet de choisir le résultat, consulter la fiche TMDB, naviguer dans la saga ou les saisons/épisodes, et voir les disponibilités de visionnage en Belgique.
+`/watch film:NomDuFilm` recherche un film ou une série. Pour une requête de saga (par exemple `Harry Potter`), Billy utilise la recherche de collections TMDB et affiche directement les films de la saga ; sinon il propose les résultats pertinents. La fiche permet ensuite de parcourir la saga, les saisons/épisodes et les disponibilités de visionnage en Belgique.
 
 ### 🤖 Billy, le souffre-douleur
 
@@ -56,7 +56,7 @@ Billy est anxieux et maladroit… mais il a de la répartie. Insulte-le avec `/b
 | `/dé` `/coinflip` `/8ball` `/roulette` `/random-game` | Petits jeux : lancer de dés, pile ou face, boule magique, roulette russe, tirage au sort du jeu du soir |
 | `/server status` | Est-ce que notre serveur Minecraft est en ligne ? Combien de joueurs ? |
 | `/en-jeu` | Qui joue à quoi en ce moment (option à activer) |
-| `/watch` | Recherche un film ou une série, affiche ses infos TMDB et les services de visionnage référencés pour la Belgique |
+| `/watch film:NomDuFilm` | Recherche un film ou une série, navigation saga/saisons/épisodes et disponibilités Belgique via TMDB/JustWatch |
 
 La liste complète des commandes est dans le [guide d'installation](docs/INSTALLATION.md#8-les-commandes).
 

@@ -77,13 +77,11 @@ def _title(media: MediaDetails) -> str:
 
 
 def build_search_embed(query: str, results: Sequence[MediaSearchResult]) -> discord.Embed:
-    lines = [
-        f"• **{result.title}** — {result.year or '?'} · {_type_label(result.media_type)}"
-        for result in results
-    ]
+    count = len(results)
+    label = "résultat" if count == 1 else "résultats"
     return discord.Embed(
         title=f"Recherche : « {query} »",
-        description="Sélectionne le titre voulu dans le menu.\\n\\n" + "\\n".join(lines),
+        description=f"{count} {label}. Sélectionne le titre dans le menu ci-dessous.",
         color=discord.Color.blurple(),
     ).set_footer(text=_footer())
 
@@ -105,12 +103,12 @@ def build_details_embed(media: MediaDetails) -> discord.Embed:
     embed = discord.Embed(
         title=_title(media),
         url=media.tmdb_url,
-        description=_truncate(media.overview, 3500),
+        description=_truncate(media.overview, 1800),
         color=discord.Color.blurple(),
     )
     if media.poster_url:
         embed.set_thumbnail(url=media.poster_url)
-    embed.add_field(name="Infos", value="\\n".join(info), inline=False)
+    embed.add_field(name="Infos", value="\n".join(info), inline=False)
     if media.collection_name:
         embed.add_field(name="Saga", value=f"📚 {media.collection_name}", inline=False)
     return embed.set_footer(text=_footer())
@@ -118,41 +116,33 @@ def build_details_embed(media: MediaDetails) -> discord.Embed:
 
 def build_collection_embed(collection: CollectionDetails) -> discord.Embed:
     films = sorted(collection.films, key=lambda item: item.year or 9999)
-    lines = [f"• **{film.title}** — {film.year or '?'}" for film in films[:MAX_RESULTS]]
+    description = _truncate(collection.overview, 1500)
+    description += f"\n\n{len(films)} film{'s' if len(films) != 1 else ''}. Sélectionne un titre dans le menu."
     embed = discord.Embed(
         title=collection.name,
         url=collection.tmdb_url,
-        description=_truncate(collection.overview, 2500),
+        description=description,
         color=discord.Color.blurple(),
     )
     if collection.poster_url:
         embed.set_thumbnail(url=collection.poster_url)
-    embed.add_field(
-        name=f"Films ({len(films)})",
-        value="\\n".join(lines) or "Aucun film.",
-        inline=False,
-    )
     return embed.set_footer(text=_footer())
 
 
 def build_season_embed(media: MediaDetails, season: SeasonDetails) -> discord.Embed:
-    lines = [
-        f"**S{season.number:02d}E{episode.number:02d}** — {episode.name}"
-        for episode in season.episodes[:MAX_RESULTS]
-    ]
+    description = _truncate(season.overview, 1500)
+    description += (
+        f"\n\n{len(season.episodes)} épisode"
+        f"{'s' if len(season.episodes) != 1 else ''}. Sélectionne un épisode dans le menu."
+    )
     embed = discord.Embed(
         title=f"{media.title} — {season.name}",
         url=media.tmdb_url,
-        description=_truncate(season.overview, 2500),
+        description=description,
         color=discord.Color.blurple(),
     )
     if season.poster_url:
         embed.set_thumbnail(url=season.poster_url)
-    embed.add_field(
-        name=f"Épisodes ({len(season.episodes)})",
-        value="\\n".join(lines) or "Aucun épisode.",
-        inline=False,
-    )
     return embed.set_footer(text=_footer())
 
 
@@ -183,12 +173,20 @@ def build_sources_embed(
     media: MediaDetails,
     providers: Sequence[WatchProvider],
 ) -> discord.Embed:
-    lines = [
-        f"• 🔗 [{provider.name}]({provider.link}) — {provider.category}" for provider in providers
-    ]
-    description = "\\n".join(lines)
-    if not description:
-        description = "Aucun service de visionnage trouvé pour la Belgique."
+    lines: list[str] = []
+    remaining = len(providers)
+
+    for provider in providers:
+        line = f"• 🔗 [{provider.name}]({provider.link}) — {provider.category}"
+        if len("\n".join((*lines, line))) > 1800:
+            break
+        lines.append(line)
+        remaining -= 1
+
+    if lines and remaining:
+        lines.append(f"… et {remaining} autre{'s' if remaining != 1 else ''}.")
+    description = "\n".join(lines) or "Aucun service de visionnage trouvé pour la Belgique."
+
     return discord.Embed(
         title=f"📺 Où regarder {media.title} ?",
         url=media.tmdb_url,

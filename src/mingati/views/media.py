@@ -77,13 +77,11 @@ def _title(media: MediaDetails) -> str:
 
 
 def build_search_embed(query: str, results: Sequence[MediaSearchResult]) -> discord.Embed:
-    lines = [
-        f"• **{result.title}** — {result.year or '?'} · {_type_label(result.media_type)}"
-        for result in results
-    ]
+    count = len(results)
+    label = "résultat" if count == 1 else "résultats"
     return discord.Embed(
         title=f"Recherche : « {query} »",
-        description="Sélectionne le titre voulu dans le menu.\n\n" + "\n".join(lines),
+        description=f"{count} {label}. Sélectionne le titre dans le menu ci-dessous.",
         color=discord.Color.blurple(),
     ).set_footer(text=_footer())
 

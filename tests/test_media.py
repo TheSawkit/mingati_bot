@@ -170,3 +170,81 @@ async def test_tmdb_rejects_invalid_credentials(monkeypatch: pytest.MonkeyPatch)
 
     with pytest.raises(UserFacingError, match="clé TMDB est invalide"):
         await provider._get(None, "/movie/1")
+
+
+
+class FakeProvider:
+    def __init__(self, results, details=None, collection=None):
+        self._results = results
+        self._details = details
+        self._collection = collection
+
+    async def search(self, http, query):
+        return self._results
+
+    async def details(self, http, media_type, media_id):
+        return self._details
+
+    async def collection(self, http, collection_id):
+        return self._collection
+
+
+async def test_media_search_returns_exact_title_only() -> None:
+    from mingati.providers.media.tmdb import MediaSearchResult
+
+    results = [
+        MediaSearchResult(1, MediaType.MOVIE, "Interstellar", "Interstellar", 2014, None),
+        MediaSearchResult(2, MediaType.MOVIE, "Interstellar: Extended", None, 2015, None),
+    ]
+    service = MediaService(FakeProvider(results))
+
+    found = await service.search(None, "Interstellar")
+
+    assert found == [results[0]]
+
+
+async def test_media_search_returns_detected_saga() -> None:
+    from mingati.providers.media.tmdb import CollectionDetails, MediaDetails, MediaSearchResult
+
+    results = [
+        MediaSearchResult(
+            1,
+            MediaType.MOVIE,
+            "Harry Potter à l'école des sorciers",
+            "Harry Potter and the Philosopher's Stone",
+            2001,
+            None,
+        ),
+        MediaSearchResult(2, MediaType.MOVIE, "Autre résultat", None, 2002, None),
+    ]
+    details = MediaDetails(
+        id=1,
+        media_type=MediaType.MOVIE,
+        title=results[0].title,
+        original_title=results[0].original_title,
+        overview=None,
+        year=2001,
+        runtime_minutes=152,
+        poster_url=None,
+        backdrop_url=None,
+        genres=(),
+        rating=7.9,
+        collection_id=99,
+        collection_name="Harry Potter - Saga",
+        seasons=None,
+        episodes=None,
+        tmdb_url="https://www.themoviedb.org/movie/1",
+    )
+    collection = CollectionDetails(
+        id=99,
+        name="Harry Potter - Saga",
+        overview=None,
+        poster_url=None,
+        films=(results[0], results[1]),
+        tmdb_url="https://www.themoviedb.org/collection/99",
+    )
+    service = MediaService(FakeProvider(results, details, collection))
+
+    found = await service.search(None, "Harry Potter")
+
+    assert found == list(collection.films)

@@ -6,7 +6,7 @@ from discord.ext import commands
 
 from mingati.bot import MingatiBot
 from mingati.errors import UserFacingError
-from mingati.views.media import WatchModal
+from mingati.views.media import send_watch_search
 
 
 class Media(commands.Cog):
@@ -18,15 +18,19 @@ class Media(commands.Cog):
         description="Chercher un film ou une série et voir où le regarder",
     )
     @app_commands.guild_only()
-    async def watch(self, interaction: discord.Interaction) -> None:
+    async def watch(
+        self,
+        interaction: discord.Interaction,
+        film: app_commands.Range[str, 2, 100],
+    ) -> None:
         if self.bot.http_session is None:
             raise UserFacingError("Le bot n'est pas encore prêt, réessaie dans un instant.")
-        await interaction.response.send_modal(
-            WatchModal(
-                self.bot.media,
-                self.bot.http_session,
-                interaction.user.id,
-            )
+        await send_watch_search(
+            interaction,
+            self.bot.media,
+            self.bot.http_session,
+            interaction.user.id,
+            film,
         )
 
 

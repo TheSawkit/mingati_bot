@@ -246,9 +246,9 @@ refresh (toutes les 2 h ou /freegames refresh)
 ### Flux
 
 ```text
-/watch
- └─ WatchModal → MediaService.search
-                       ↓
+/watch film:"Nom du film"
+ └─ MediaService.search
+       ↓
                   TMDB /search/multi
                        ↓
                  sélection utilisateur

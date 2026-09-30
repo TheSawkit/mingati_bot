@@ -1,3 +1,6 @@
+import aiohttp
+import pytest
+
 from mingati.errors import UserFacingError
 from mingati.providers.media.tmdb import (
     MediaType,
@@ -132,3 +135,38 @@ async def test_media_service_requires_tmdb() -> None:
 
     with pytest.raises(UserFacingError, match="TMDB_API_TOKEN"):
         await service.search(None, "Dune")
+
+
+async def test_tmdb_falls_back_to_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    from mingati.providers.media import tmdb
+
+    calls = 0
+
+    async def fake_fetch_json(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise aiohttp.ClientResponseError(None, (), status=401)
+        return {"ok": True}
+
+    monkeypatch.setattr(tmdb, "fetch_json", fake_fetch_json)
+
+    provider = tmdb.TMDBProvider("test-credential")
+    result = await provider._get(None, "/movie/1")
+
+    assert result == {"ok": True}
+    assert calls == 2
+
+
+async def test_tmdb_rejects_invalid_credentials(monkeypatch: pytest.MonkeyPatch) -> None:
+    from mingati.providers.media import tmdb
+
+    async def fake_fetch_json(*args, **kwargs):
+        raise aiohttp.ClientResponseError(None, (), status=401)
+
+    monkeypatch.setattr(tmdb, "fetch_json", fake_fetch_json)
+
+    provider = tmdb.TMDBProvider("bad-credential")
+
+    with pytest.raises(UserFacingError, match="clé TMDB est invalide"):
+        await provider._get(None, "/movie/1")

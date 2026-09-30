@@ -39,7 +39,7 @@ Le bot surveille **Epic Games, Steam et GOG** et poste chaque nouveau jeu offert
 
 ### 🎬 Films et séries
 
-`/watch` ouvre une recherche interactive : choix du film/série ou de la saga, fiche TMDB, saisons/épisodes pour les séries, puis disponibilités de visionnage en Belgique.
+`/watch film:NomDuFilm` recherche directement un film ou une série, puis permet de choisir le résultat, consulter la fiche TMDB, naviguer dans la saga ou les saisons/épisodes, et voir les disponibilités de visionnage en Belgique.
 
 ### 🤖 Billy, le souffre-douleur
 

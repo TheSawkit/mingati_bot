@@ -31,7 +31,27 @@ class MediaService:
         query = query.strip()
         if len(query) < 2:
             raise UserFacingError("Donne-moi au moins 2 caractères pour la recherche.")
-        return await self._provider().search(http, query)
+
+        provider = self._provider()
+        results = await provider.search(http, query)
+        if not results:
+            return []
+
+        primary = results[0]
+        query_key = query.casefold()
+        exact_titles = {primary.title.casefold()}
+        if primary.original_title:
+            exact_titles.add(primary.original_title.casefold())
+        if query_key in exact_titles:
+            return [primary]
+
+        collections = await provider.search_collections(http, query)
+        if collections:
+            collection = await self.collection(http, collections[0].id)
+            if collection.films:
+                return list(collection.films[:25])
+
+        return results[:25]
 
     async def details(
         self,

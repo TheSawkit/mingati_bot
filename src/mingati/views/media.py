@@ -83,7 +83,7 @@ def build_search_embed(query: str, results: Sequence[MediaSearchResult]) -> disc
     ]
     return discord.Embed(
         title=f"Recherche : « {query} »",
-        description="Sélectionne le titre voulu dans le menu.\\n\\n" + "\\n".join(lines),
+        description="Sélectionne le titre voulu dans le menu.\n\n" + "\n".join(lines),
         color=discord.Color.blurple(),
     ).set_footer(text=_footer())
 
@@ -110,7 +110,7 @@ def build_details_embed(media: MediaDetails) -> discord.Embed:
     )
     if media.poster_url:
         embed.set_thumbnail(url=media.poster_url)
-    embed.add_field(name="Infos", value="\\n".join(info), inline=False)
+    embed.add_field(name="Infos", value="\n".join(info), inline=False)
     if media.collection_name:
         embed.add_field(name="Saga", value=f"📚 {media.collection_name}", inline=False)
     return embed.set_footer(text=_footer())
@@ -129,7 +129,7 @@ def build_collection_embed(collection: CollectionDetails) -> discord.Embed:
         embed.set_thumbnail(url=collection.poster_url)
     embed.add_field(
         name=f"Films ({len(films)})",
-        value="\\n".join(lines) or "Aucun film.",
+        value="\n".join(lines) or "Aucun film.",
         inline=False,
     )
     return embed.set_footer(text=_footer())
@@ -150,7 +150,7 @@ def build_season_embed(media: MediaDetails, season: SeasonDetails) -> discord.Em
         embed.set_thumbnail(url=season.poster_url)
     embed.add_field(
         name=f"Épisodes ({len(season.episodes)})",
-        value="\\n".join(lines) or "Aucun épisode.",
+        value="\n".join(lines) or "Aucun épisode.",
         inline=False,
     )
     return embed.set_footer(text=_footer())
@@ -186,7 +186,7 @@ def build_sources_embed(
     lines = [
         f"• 🔗 [{provider.name}]({provider.link}) — {provider.category}" for provider in providers
     ]
-    description = "\\n".join(lines)
+    description = "\n".join(lines)
     if not description:
         description = "Aucun service de visionnage trouvé pour la Belgique."
     return discord.Embed(

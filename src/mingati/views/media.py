@@ -116,8 +116,10 @@ def build_details_embed(media: MediaDetails) -> discord.Embed:
 
 def build_collection_embed(collection: CollectionDetails) -> discord.Embed:
     films = sorted(collection.films, key=lambda item: item.year or 9999)
+    count = len(films)
+    label = "film" if count == 1 else "films"
     description = _truncate(collection.overview, 1500)
-    description += f"\n\n{len(films)} film{'s' if len(films) != 1 else ''}. Sélectionne un titre dans le menu."
+    description += f"\n\n{count} {label}. Sélectionne un titre dans le menu."
     embed = discord.Embed(
         title=collection.name,
         url=collection.tmdb_url,

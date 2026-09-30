@@ -270,9 +270,9 @@ refresh (toutes les 2 h ou /freegames refresh)
                   liste de liens
 ```
 
-La commande n'est disponible que sur le serveur. La recherche et les interactions restent éphémères et appartiennent à l'utilisateur qui les a lancées. Aucune table SQLite n'est nécessaire en V1.
+La commande n'est disponible que sur le serveur. La recherche et les interactions restent éphémères et appartiennent à l'utilisateur qui les a lancées. Aucune table SQLite n'est nécessaire en V1. Les menus de sélection Discord sont limités à 25 options ; une liste plus longue est tronquée en V1.
 
-TMDB fournit les métadonnées et les disponibilités par pays ; son endpoint Watch Providers ne fournit pas un deep-link individuel par service, mais une URL permettant d'accéder à la disponibilité du titre. L'utilisation de ces données de disponibilité nécessite l'attribution JustWatch.
+TMDB fournit les métadonnées et les disponibilités par pays ; son endpoint Watch Providers ne fournit pas un deep-link individuel par service, mais une URL permettant d'accéder à la disponibilité du titre. La V1 n'affiche que les offres de streaming (`flatrate`, gratuit, avec publicité), pas la location ni l'achat. L'utilisation de ces données de disponibilité nécessite l'attribution JustWatch. L'application doit aussi attribuer TMDB et afficher la mention requise indiquant qu'elle utilise l'API TMDB sans être endossée ou certifiée par TMDB.
 
 ## Game night et fun
 

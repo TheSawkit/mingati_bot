@@ -16,8 +16,6 @@ WATCH_CATEGORIES = (
     ("flatrate", "Streaming"),
     ("free", "Gratuit"),
     ("ads", "Avec publicité"),
-    ("rent", "Location"),
-    ("buy", "Achat"),
 )
 
 
@@ -33,6 +31,13 @@ class MediaSearchResult:
     title: str
     original_title: str | None
     year: int | None
+    poster_url: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class CollectionSearchResult:
+    id: int
+    name: str
     poster_url: str | None
 
 
@@ -139,6 +144,18 @@ def _parse_search(data: dict[str, Any]) -> list[MediaSearchResult]:
         if media_type in (MediaType.MOVIE, MediaType.TV):
             results.append(_search_result(item, MediaType(media_type)))
     return results
+
+
+def _parse_collection_search(data: dict[str, Any]) -> list[CollectionSearchResult]:
+    return [
+        CollectionSearchResult(
+            id=int(item["id"]),
+            name=str(item.get("name") or "Saga"),
+            poster_url=image_url(item.get("poster_path")),
+        )
+        for item in data.get("results") or []
+        if item.get("id")
+    ]
 
 
 def _runtime(data: dict[str, Any], media_type: MediaType) -> int | None:
@@ -267,6 +284,10 @@ class TMDBProvider:
                 headers=headers,
             )
         except aiohttp.ClientResponseError as error:
+            if error.status == 429:
+                raise UserFacingError(
+                    "TMDB a temporairement limité les requêtes. Réessaie dans un instant."
+                ) from error
             if error.status != 401:
                 raise UserFacingError(
                     "TMDB est momentanément indisponible. Réessaie dans un instant."
@@ -299,6 +320,22 @@ class TMDBProvider:
         if not isinstance(data, dict):
             raise ProviderError("Unexpected TMDB payload")
         return data
+
+    async def search_collections(
+        self,
+        http: aiohttp.ClientSession,
+        query: str,
+    ) -> list[CollectionSearchResult]:
+        data = await self._get(
+            http,
+            "/search/collection",
+            {
+                "query": query,
+                "language": self.language,
+                "page": "1",
+            },
+        )
+        return _parse_collection_search(data)[:5]
 
     async def search(
         self,

@@ -3,6 +3,8 @@ import pytest
 
 from mingati.errors import UserFacingError
 from mingati.providers.media.tmdb import (
+    CollectionSearchResult,
+    MediaSearchResult,
     MediaType,
     _parse_collection,
     _parse_details,
@@ -11,6 +13,12 @@ from mingati.providers.media.tmdb import (
     _parse_season,
 )
 from mingati.services.media import MediaService
+from mingati.views.media import (
+    build_collection_embed,
+    build_details_embed,
+    build_search_embed,
+    build_season_embed,
+)
 
 
 def test_parse_search_keeps_movies_and_tv() -> None:
@@ -105,7 +113,7 @@ def test_parse_collection_and_season() -> None:
     assert season.episodes[0].runtime_minutes == 47
 
 
-def test_parse_watch_providers_deduplicates() -> None:
+def test_parse_watch_providers_only_keeps_streaming_sources() -> None:
     providers = _parse_providers(
         {
             "results": {
@@ -114,8 +122,14 @@ def test_parse_watch_providers_deduplicates() -> None:
                     "flatrate": [
                         {"provider_id": 1, "provider_name": "Netflix"},
                     ],
+                    "free": [
+                        {"provider_id": 2, "provider_name": "Pluto TV"},
+                    ],
                     "rent": [
-                        {"provider_id": 1, "provider_name": "Netflix"},
+                        {"provider_id": 3, "provider_name": "Apple TV"},
+                    ],
+                    "buy": [
+                        {"provider_id": 4, "provider_name": "Google TV"},
                     ],
                 }
             }
@@ -123,9 +137,10 @@ def test_parse_watch_providers_deduplicates() -> None:
         "BE",
     )
 
-    assert len(providers) == 1
-    assert providers[0].name == "Netflix"
-    assert providers[0].category == "Streaming"
+    assert [(provider.name, provider.category) for provider in providers] == [
+        ("Netflix", "Streaming"),
+        ("Pluto TV", "Gratuit"),
+    ]
 
 
 async def test_media_service_requires_tmdb() -> None:
@@ -170,3 +185,185 @@ async def test_tmdb_rejects_invalid_credentials(monkeypatch: pytest.MonkeyPatch)
 
     with pytest.raises(UserFacingError, match="clé TMDB est invalide"):
         await provider._get(None, "/movie/1")
+
+
+def test_parse_collection_search() -> None:
+    from mingati.providers.media.tmdb import _parse_collection_search
+
+    results = _parse_collection_search(
+        {
+            "results": [
+                {"id": 10, "name": "Harry Potter Collection", "poster_path": "/poster.jpg"},
+                {"id": 11, "name": "Other Collection"},
+            ]
+        }
+    )
+
+    assert results == [
+        CollectionSearchResult(
+            10, "Harry Potter Collection", "https://image.tmdb.org/t/p/w500/poster.jpg"
+        ),
+        CollectionSearchResult(11, "Other Collection", None),
+    ]
+
+
+class FakeMediaProvider:
+    def __init__(self, results, collections=None, details=None, collection=None):
+        self._results = results
+        self._collections = collections or []
+        self._details = details
+        self._collection = collection
+
+    async def search(self, http, query):
+        return self._results
+
+    async def search_collections(self, http, query):
+        return self._collections
+
+    async def details(self, http, media_type, media_id):
+        return self._details
+
+    async def collection(self, http, collection_id):
+        return self._collection
+
+
+async def test_media_search_returns_exact_title_only() -> None:
+    from mingati.providers.media.tmdb import MediaSearchResult
+
+    results = [
+        MediaSearchResult(1, MediaType.MOVIE, "Interstellar", "Interstellar", 2014, None),
+        MediaSearchResult(2, MediaType.MOVIE, "Interstellar: Extended", None, 2015, None),
+    ]
+    service = MediaService(FakeMediaProvider(results))
+
+    found = await service.search(None, "Interstellar")
+
+    assert found == [results[0]]
+
+
+async def test_media_search_returns_collection_for_broad_query() -> None:
+    from mingati.providers.media.tmdb import CollectionDetails
+
+    results = [
+        MediaSearchResult(
+            1,
+            MediaType.MOVIE,
+            "Harry Potter à l'école des sorciers",
+            "Harry Potter and the Philosopher's Stone",
+            2001,
+            None,
+        ),
+        MediaSearchResult(2, MediaType.MOVIE, "Autre résultat", None, 2002, None),
+    ]
+    collection = CollectionDetails(
+        id=99,
+        name="Harry Potter Collection",
+        overview=None,
+        poster_url=None,
+        films=tuple(results),
+        tmdb_url="https://www.themoviedb.org/collection/99",
+    )
+
+    service = MediaService(
+        FakeMediaProvider(
+            results,
+            [CollectionSearchResult(99, collection.name, None)],
+            collection=collection,
+        )
+    )
+
+    found = await service.search(None, "Harry Potter")
+
+    assert found == list(collection.films)
+
+
+def test_media_embeds_stay_within_discord_limits() -> None:
+    from mingati.providers.media.tmdb import (
+        CollectionDetails,
+        Episode,
+        MediaDetails,
+        SeasonDetails,
+    )
+
+    media = MediaDetails(
+        id=1,
+        media_type=MediaType.MOVIE,
+        title="Film",
+        original_title=None,
+        overview="x" * 5000,
+        year=2020,
+        runtime_minutes=120,
+        poster_url=None,
+        backdrop_url=None,
+        genres=("Action", "Drama"),
+        rating=8.5,
+        collection_id=2,
+        collection_name="Saga",
+        seasons=None,
+        episodes=None,
+        tmdb_url="https://www.themoviedb.org/movie/1",
+    )
+    collection = CollectionDetails(
+        id=2,
+        name="Saga",
+        overview="x" * 5000,
+        poster_url=None,
+        films=tuple(
+            MediaSearchResult(
+                i,
+                MediaType.MOVIE,
+                "Film " + ("x" * 80),
+                None,
+                2000 + i,
+                None,
+            )
+            for i in range(1, 26)
+        ),
+        tmdb_url="https://www.themoviedb.org/collection/2",
+    )
+    season = SeasonDetails(
+        series_id=3,
+        number=1,
+        name="Saison 1",
+        overview="x" * 5000,
+        poster_url=None,
+        episodes=tuple(
+            Episode(i, i, "Épisode " + ("x" * 80), None, None, None, None) for i in range(1, 26)
+        ),
+    )
+
+    details_embed = build_details_embed(media)
+    collection_embed = build_collection_embed(collection)
+    season_embed = build_season_embed(
+        MediaDetails(
+            id=3,
+            media_type=MediaType.TV,
+            title="Série",
+            original_title=None,
+            overview=None,
+            year=2020,
+            runtime_minutes=45,
+            poster_url=None,
+            backdrop_url=None,
+            genres=(),
+            rating=8.0,
+            collection_id=None,
+            collection_name=None,
+            seasons=1,
+            episodes=25,
+            tmdb_url="https://www.themoviedb.org/tv/3",
+        ),
+        season,
+    )
+    search_embed = build_search_embed(
+        "query",
+        collection.films,
+    )
+
+    assert len(details_embed.description or "") <= 2048
+    assert len(collection_embed.description or "") <= 2048
+    assert len(season_embed.description or "") <= 2048
+    assert len(search_embed.description or "") <= 2048
+    assert all(len(field.value) <= 1024 for field in details_embed.fields)
+    assert all(len(field.value) <= 1024 for field in collection_embed.fields)
+    assert all(len(field.value) <= 1024 for field in season_embed.fields)

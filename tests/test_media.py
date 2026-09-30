@@ -198,10 +198,11 @@ def test_parse_collection_search() -> None:
 
 
 class FakeMediaProvider:
-    def __init__(self, results, collections=None, details=None):
+    def __init__(self, results, collections=None, details=None, collection=None):
         self._results = results
         self._collections = collections or []
         self._details = details
+        self._collection = collection
 
     async def search(self, http, query):
         return self._results
@@ -213,7 +214,7 @@ class FakeMediaProvider:
         return self._details
 
     async def collection(self, http, collection_id):
-        return self._collections[0].details if self._collections else None
+        return self._collection
 
 
 async def test_media_search_returns_exact_title_only() -> None:
@@ -253,12 +254,13 @@ async def test_media_search_returns_collection_for_broad_query() -> None:
         tmdb_url="https://www.themoviedb.org/collection/99",
     )
 
-    class CollectionHit(CollectionSearchResult):
-        @property
-        def details(self):
-            return collection
-
-    service = MediaService(FakeMediaProvider(results, [CollectionHit(99, collection.name, None)]))
+    service = MediaService(
+        FakeMediaProvider(
+            results,
+            [CollectionSearchResult(99, collection.name, None)],
+            collection=collection,
+        )
+    )
 
     found = await service.search(None, "Harry Potter")
 

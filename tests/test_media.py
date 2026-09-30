@@ -200,7 +200,9 @@ def test_parse_collection_search() -> None:
     )
 
     assert results == [
-        CollectionSearchResult(10, "Harry Potter Collection", "https://image.tmdb.org/t/p/w500/poster.jpg"),
+        CollectionSearchResult(
+            10, "Harry Potter Collection", "https://image.tmdb.org/t/p/w500/poster.jpg"
+        ),
         CollectionSearchResult(11, "Other Collection", None),
     ]
 
@@ -326,8 +328,7 @@ def test_media_embeds_stay_within_discord_limits() -> None:
         overview="x" * 5000,
         poster_url=None,
         episodes=tuple(
-            Episode(i, i, "Épisode " + ("x" * 80), None, None, None, None)
-            for i in range(1, 26)
+            Episode(i, i, "Épisode " + ("x" * 80), None, None, None, None) for i in range(1, 26)
         ),
     )
 

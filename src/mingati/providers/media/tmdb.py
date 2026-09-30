@@ -255,16 +255,43 @@ class TMDBProvider:
         path: str,
         params: dict[str, str] | None = None,
     ) -> dict[str, Any]:
+        headers = {
+            "Authorization": f"Bearer {self._access_token}",
+            "accept": "application/json",
+        }
         try:
             data = await fetch_json(
                 http,
                 f"{TMDB_API_URL}{path}",
                 params=params,
-                headers={
-                    "Authorization": f"Bearer {self._access_token}",
-                    "accept": "application/json",
-                },
+                headers=headers,
             )
+        except aiohttp.ClientResponseError as error:
+            if error.status != 401:
+                raise UserFacingError(
+                    "TMDB est momentanément indisponible. Réessaie dans un instant."
+                ) from error
+
+            # TMDB also accepts the v3 API key for v3 GET endpoints.
+            # Falling back here keeps TMDB_API_TOKEN compatible with either credential type.
+            fallback_params = dict(params or {})
+            fallback_params["api_key"] = self._access_token
+            try:
+                data = await fetch_json(
+                    http,
+                    f"{TMDB_API_URL}{path}",
+                    params=fallback_params,
+                    headers={"accept": "application/json"},
+                )
+            except aiohttp.ClientResponseError as fallback_error:
+                if fallback_error.status == 401:
+                    raise UserFacingError(
+                        "La clé TMDB est invalide. Utilise une API Read Access Token "
+                        "ou une API Key TMDB valide dans TMDB_API_TOKEN."
+                    ) from None
+                raise UserFacingError(
+                    "TMDB est momentanément indisponible. Réessaie dans un instant."
+                ) from fallback_error
         except ProviderError as error:
             raise UserFacingError(
                 "TMDB est momentanément indisponible. Réessaie dans un instant."

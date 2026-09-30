@@ -16,8 +16,6 @@ WATCH_CATEGORIES = (
     ("flatrate", "Streaming"),
     ("free", "Gratuit"),
     ("ads", "Avec publicité"),
-    ("rent", "Location"),
-    ("buy", "Achat"),
 )
 
 

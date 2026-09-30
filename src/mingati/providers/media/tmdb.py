@@ -337,7 +337,6 @@ class TMDBProvider:
         )
         return _parse_collection_search(data)[:5]
 
-
     async def search(
         self,
         http: aiohttp.ClientSession,

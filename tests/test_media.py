@@ -112,7 +112,7 @@ def test_parse_collection_and_season() -> None:
     assert season.episodes[0].runtime_minutes == 47
 
 
-def test_parse_watch_providers_deduplicates() -> None:
+def test_parse_watch_providers_only_keeps_streaming_sources() -> None:
     providers = _parse_providers(
         {
             "results": {
@@ -121,8 +121,14 @@ def test_parse_watch_providers_deduplicates() -> None:
                     "flatrate": [
                         {"provider_id": 1, "provider_name": "Netflix"},
                     ],
+                    "free": [
+                        {"provider_id": 2, "provider_name": "Pluto TV"},
+                    ],
                     "rent": [
-                        {"provider_id": 1, "provider_name": "Netflix"},
+                        {"provider_id": 3, "provider_name": "Apple TV"},
+                    ],
+                    "buy": [
+                        {"provider_id": 4, "provider_name": "Google TV"},
                     ],
                 }
             }
@@ -130,9 +136,10 @@ def test_parse_watch_providers_deduplicates() -> None:
         "BE",
     )
 
-    assert len(providers) == 1
-    assert providers[0].name == "Netflix"
-    assert providers[0].category == "Streaming"
+    assert [(provider.name, provider.category) for provider in providers] == [
+        ("Netflix", "Streaming"),
+        ("Pluto TV", "Gratuit"),
+    ]
 
 
 async def test_media_service_requires_tmdb() -> None:

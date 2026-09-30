@@ -4,6 +4,7 @@ import pytest
 from mingati.errors import UserFacingError
 from mingati.providers.media.tmdb import (
     CollectionSearchResult,
+    MediaSearchResult,
     MediaType,
     _parse_collection,
     _parse_details,
@@ -239,7 +240,7 @@ async def test_media_search_returns_exact_title_only() -> None:
 
 
 async def test_media_search_returns_collection_for_broad_query() -> None:
-    from mingati.providers.media.tmdb import CollectionDetails, MediaSearchResult
+    from mingati.providers.media.tmdb import CollectionDetails
 
     results = [
         MediaSearchResult(
